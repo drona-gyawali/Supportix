@@ -1,0 +1,125 @@
+Here's a structured roadmap to build your AI-integrated, scalable support system backend with Django/DRF, organized into phases and days:
+
+---
+
+### **Phase 1: Setup & Core Models (Days 1-4)**
+**Day 1: Project Setup**  
+- Install Django, DRF, PostgreSQL, Redis, and Docker.  
+- Initialize the project and apps (e.g., `users`, `departments`, `tickets`).  
+- Configure settings for scalability (e.g., connection pooling, async support).  
+
+**Day 2-3: Database Design**  
+- Define models:  
+  - `User` (with roles: agent, admin).  
+  - `Department` (name, max_capacity, current_traffic).  
+  - `Ticket` (status, priority, assigned_to, department).  
+- Add relationships (e.g., departments have users, tickets belong to departments).  
+
+**Day 4: Authentication & Permissions**  
+- Implement JWT authentication.  
+- Add role-based permissions (e.g., admins can merge departments).  
+
+---
+
+### **Phase 2: Queue System (Days 5-9)**  
+**Day 5-6: Ticket Management Logic**  
+- Create APIs for ticket creation, assignment, and status updates.  
+- Add a `TicketQueue` model to track pending requests.  
+
+**Day 7-8: Load Distribution**  
+- Implement round-robin or least-busy logic to assign tickets to agents.  
+- Use signals or async tasks to auto-update `current_traffic` in departments.  
+
+**Day 9: Testing**  
+- Simulate ticket flow with dummy data (e.g., 1000 tickets).  
+- Optimize database queries (e.g., `select_related`, `prefetch_related`).  
+
+---
+
+### **Phase 3: Merge Functionality (Days 10-14)**  
+**Day 10-11: Merge Logic**  
+- Add a `merge_threshold` field to `Department` (e.g., merge if traffic > 80%).  
+- Write a service to check overloaded departments and find underutilized ones.  
+
+**Day 12-13: Merge API**  
+- Create endpoints:  
+  - `POST /api/merge/suggest/` (AI suggests merges).  
+  - `POST /api/merge/{department_id}/` (manual merge).  
+- Update ticket routing to redistribut traffic post-merge.  
+
+**Day 14: Stress Testing**  
+- Test merging under high load (e.g., 10k tickets).  
+- Use Django Debug Toolbar to identify bottlenecks.  
+
+---
+
+### **Phase 4: AI Integration (Days 15-19)**  
+**Day 15-16: Traffic Prediction Model**  
+- Train a lightweight model (e.g., scikit-learn time-series forecasting) on historical traffic data.  
+- Save the model to a `prediction_service.py` module.  
+
+**Day 17-18: AI Service Endpoints**  
+- Create a `Prediction` API:  
+  - `POST /api/predict-traffic/` (returns predicted traffic for next hour).  
+- Integrate predictions into merge suggestions.  
+
+**Day 19: Auto-Merge (Optional)**  
+- Add a Celery task to auto-merge departments if predictions exceed thresholds.  
+
+---
+
+### **Phase 5: Scalability (Days 20-25)**  
+**Day 20-21: Caching**  
+- Cache department traffic data with Redis.  
+- Use `django-redis` for query caching.  
+
+**Day 22-23: Async Tasks**  
+- Offload ticket assignment and AI predictions to Celery.  
+- Configure RabbitMQ as the message broker.  
+
+**Day 24-25: Database Sharding**  
+- Shard the `Ticket` table by department ID for horizontal scaling.  
+
+---
+
+### **Phase 6: Security & Deployment (Days 26-30)**  
+**Day 26-27: Security**  
+- Add rate limiting (DRF Throttling).  
+- Sanitize inputs and enable CORS only for trusted domains.  
+
+**Day 28-29: API Documentation**  
+- Document endpoints with Swagger/OpenAPI.  
+- Write unit tests (90%+ coverage).  
+
+**Day 30: Deployment**  
+- Dockerize the app.  
+- Deploy to AWS/GCP with Gunicorn + Nginx.  
+- Set up monitoring (Prometheus + Grafana).  
+
+---
+
+### **Key Tools**  
+- **Database**: PostgreSQL (with pgBouncer for pooling).  
+- **Caching**: Redis.  
+- **Async**: Celery + RabbitMQ.  
+- **AI**: Scikit-learn/TensorFlow Lite (for low latency).  
+- **Testing**: Locust (load testing), Pytest.  
+
+### **Example Merge Logic Snippet**  
+```python
+# services/merge.py
+def auto_merge_departments():
+    overloaded = Department.objects.filter(current_traffic__gte=F('max_capacity') * 0.8)
+    underloaded = Department.objects.filter(current_traffic__lte=F('max_capacity') * 0.2)
+    
+    for dept in overloaded:
+        target = underloaded.first()
+        if target:
+            target.agents.add(*dept.agents.all())
+            dept.is_merged = True
+            dept.save()
+```
+
+---
+
+This roadmap balances feature development, scalability, and AI integration. Adjust timelines based on your familiarity with tools, but prioritize database optimization and async tasks early to ensure scalability.
