@@ -1,0 +1,22 @@
+.env
+
+__pycache__/
+*.py[cod]
+
+
+*.log
+
+*.txt
+
+
+*.sqlite3
+
+# Ignore virtual environments
+venv/
+.env/
+
+.vscode/
+.idea/
+
+
+**/migrations/*.pyc
