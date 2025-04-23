@@ -3,17 +3,17 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+*.python-version
 
 *.log
 
-*.txt
+instruction.txt
 
 
 *.sqlite3
 
 # Ignore virtual environments
-venv/
+*.venv
 .env/
 
 .vscode/

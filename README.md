@@ -42,6 +42,3 @@ The goal is to ensure **fair workload distribution**, **faster resolution times*
 >![30109309675](https://github.com/user-attachments/assets/c414c5d7-495b-45da-8613-1f9426c6d385)
 
 Built with scalability, AI, and clean architecture in mind.
-
-
-
