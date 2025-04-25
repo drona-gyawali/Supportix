@@ -1,3 +1,0 @@
-"""
-Pubsub Model to intilaize.
-"""

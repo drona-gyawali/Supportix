@@ -1,69 +1,110 @@
 from rest_framework import serializers
-from .models import Department, Customer, Agents, Ticket, UserDetails
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+from .models import Department, Customer, Agent, Ticket, Role
+
+User = get_user_model()
 
 
-class UserDetailsSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = UserDetails
-        # fields = ("role","profile_picture")
-
-
-class Userserializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
-        fields = ("username", "email", "password")
-        extra_kwargs = {"password": {"write_only": True}}
-
+        fields = ("id", "username", "email", "password", "role", "profile_picture")
+        read_only_fields = ("id",)
+    
+    def create(self, validated_data):
+        # pop off password, handle hashing
+        password = validated_data.pop("password")
+        user = User(**validated_data)
+        user.set_password(password)
+        user.save()
+        return user
 
 class RegisterSerializer(serializers.Serializer):
-    user = Userserializer()
-    role = serializers.CharField(max_length=20)
+    user = UserSerializer()
+    # optionally let clients pick role, but usually fixed:
+    role = serializers.ChoiceField(choices=[Role.CUSTOMER, Role.AGENT])
 
     def create(self, validated_data):
         user_data = validated_data.pop("user")
-        user = User.objects.create_user(
-            username=user_data["username"],
-            email=user_data["email"],
-            password=user_data["password"],
-        )
-        UserDetails.objects.create(user=user, **validated_data)
-        return {
-            "user": user,
-            "role": validated_data["role"],
-        }  # Return a dictionary, not a User instance
+        user_data["role"] = validated_data["role"]
+        user = UserSerializer.create(UserSerializer(), validated_data=user_data)
 
+        if user.role == Role.CUSTOMER:
+            profile = Customer.objects.create(user=user)
+        else:
+            # import Agent lazily to avoid circular
+            from .models import Agent 
+            profile = Agent.objects.create(user=user, **self.context.get("agent_defaults", {}))
 
+        return {"user": user, "profile": profile}
+    
 class DepartmentSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Department
-        fields = "__all__"
+        fields = ("id", "name")
 
 
 class CustomerSerializer(serializers.ModelSerializer):
+    # nest the user so client can provide username/email/password/role
+    user = UserSerializer()
+
     class Meta:
         model = Customer
-        fields = "__all__"
+        fields = ("id", "user", "solved_issues", "is_paid")
+        read_only_fields = ("id", "solved_issues")
+
+    def create(self, validated_data):
+        user_data = validated_data.pop("user")
+        # ensure role is CUSTOMER
+        user_data["role"] = Role.CUSTOMER
+        user = UserSerializer.create(UserSerializer(), validated_data=user_data)
+        customer = Customer.objects.create(user=user, **validated_data)
+        return customer
 
 
-class AgentsSerializer(serializers.ModelSerializer):
+class AgentSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+
     class Meta:
-        model = Agents
-        fields = [
-            "username",
-            "created_at",
-            "current_customer",
-            "dept_name",
+        model = Agent
+        fields = (
+            "id",
+            "user",
+            "department",
+            "current_customers",
+            "max_customers",
             "is_available",
-            "max_customer",
-            "has_capacity",
-        ]
+        )
+        read_only_fields = ("id", "current_customers")
+
+    def create(self, validated_data):
+        user_data = validated_data.pop("user")
+        # ensure role is AGENT
+        user_data["role"] = Role.AGENT
+        user = UserSerializer.create(UserSerializer(), validated_data=user_data)
+        agent = Agent.objects.create(user=user, **validated_data)
+        return agent
 
 
 class TicketSerializer(serializers.ModelSerializer):
+    # show nested customer and agent by ID
+    customer = serializers.PrimaryKeyRelatedField(queryset=Customer.objects.all())
+    agent = serializers.PrimaryKeyRelatedField(
+        queryset=Agent.objects.all(), allow_null=True, required=False
+    )
+
     class Meta:
         model = Ticket
-        fields = "__all__"
+        fields = (
+            "id",
+            "ticket_id",
+            "customer",
+            "agent",
+            "issue_title",
+            "issue_desc",
+            "status",
+            "created_at",
+        )
+        read_only_fields = ("id", "ticket_id", "created_at")
