@@ -1,6 +1,6 @@
-from rest_framework import serializers
+from core.models import Agent, Customer, Department, Role, Ticket
 from django.contrib.auth import get_user_model
-from .models import Department, Customer, Agent, Ticket, Role
+from rest_framework import serializers
 
 User = get_user_model()
 
@@ -12,7 +12,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ("id", "username", "email", "password", "role", "profile_picture")
         read_only_fields = ("id",)
-    
+
     def create(self, validated_data):
         # pop off password, handle hashing
         password = validated_data.pop("password")
@@ -20,6 +20,7 @@ class UserSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
+
 
 class RegisterSerializer(serializers.Serializer):
     user = UserSerializer()
@@ -35,11 +36,15 @@ class RegisterSerializer(serializers.Serializer):
             profile = Customer.objects.create(user=user)
         else:
             # import Agent lazily to avoid circular
-            from .models import Agent 
-            profile = Agent.objects.create(user=user, **self.context.get("agent_defaults", {}))
+            from .models import Agent
+
+            profile = Agent.objects.create(
+                user=user, **self.context.get("agent_defaults", {})
+            )
 
         return {"user": user, "profile": profile}
-    
+
+
 class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Department
@@ -88,7 +93,7 @@ class AgentSerializer(serializers.ModelSerializer):
         return agent
 
 
-class TicketSerializer(serializers.ModelSerializer):
+class TicketDetailSerializer(serializers.ModelSerializer):
     # show nested customer and agent by ID
     customer = serializers.PrimaryKeyRelatedField(queryset=Customer.objects.all())
     agent = serializers.PrimaryKeyRelatedField(
@@ -105,6 +110,21 @@ class TicketSerializer(serializers.ModelSerializer):
             "issue_title",
             "issue_desc",
             "status",
+            "tags",
             "created_at",
         )
         read_only_fields = ("id", "ticket_id", "created_at")
+
+
+class TicketCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ticket
+        fields = ["issue_title", "issue_desc", "tag"]
+
+
+class TicketCreateSerializer(serializers.ModelSerializer):
+    issue_desc = serializers.CharField(required=True, allow_blank=False)
+
+    class Meta:
+        model = Ticket
+        fields = ["issue_title", "issue_desc", "tag"]

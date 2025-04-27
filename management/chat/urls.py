@@ -1,6 +1,6 @@
 from django.urls import path
-from .views import view, create, delete, update, group_update, group_create
 
+from .views import create, delete, group_create, group_update, update, view
 
 urlpatterns = [
     path("view", view),
@@ -8,5 +8,5 @@ urlpatterns = [
     path("delete/<int:id>", delete),
     path("update/<int:id>", update),
     path("update/group/<str:group_name>", group_update),
-    path("create/group", group_create)
+    path("create/group", group_create),
 ]

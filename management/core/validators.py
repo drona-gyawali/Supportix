@@ -3,7 +3,7 @@ Info:
  Copyright (c) SupportSystem
  Written in 2025 by Dorna Raj Gyawali <dronarajgyawali@gmail.com>
 
-This module provides utility functions for validating ticket creation, 
+This module provides utility functions for validating ticket creation,
 checking agent assignment status, and retrieving user information.
 
 Functions:
@@ -13,8 +13,9 @@ Functions:
 
 """
 
-from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from rest_framework import serializers
+
 from .models import Ticket
 
 User = get_user_model()
@@ -25,23 +26,21 @@ def validate_ticket_creation(customer_id):
     Ensure the customer has no open tickets before creating a new one.
     """
     open_tickets = Ticket.objects.filter(
-        customer_id=customer_id,
-        status__in=['waiting', 'assigned']
+        customer_id=customer_id, status__in=["waiting", "assigned"]
     ).exists()
     if open_tickets:
-        raise serializers.ValidationError({
-            "customer": "You have unresolved tickets. Complete them before creating new ones."
-        })
+        raise serializers.ValidationError(
+            {
+                "customer": "You have unresolved tickets. Complete them before creating new ones."
+            }
+        )
 
 
 def check_agent_status(customer_id):
     """
     Return True if the given customer has at least one ticket assigned to an agent.
     """
-    return Ticket.objects.filter(
-        customer_id=customer_id,
-        agent__isnull=False
-    ).exists()
+    return Ticket.objects.filter(customer_id=customer_id, agent__isnull=False).exists()
 
 
 def get_user(request, role=None):

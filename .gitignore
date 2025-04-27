@@ -10,8 +10,6 @@ __pycache__/
 instruction.txt
 
 
-*.sqlite3
-
 # Ignore virtual environments
 *.venv
 .env/

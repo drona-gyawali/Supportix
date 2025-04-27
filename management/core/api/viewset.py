@@ -1,14 +1,32 @@
-from django.http import JsonResponse
-from rest_framework.response import Response
-from rest_framework.decorators import APIView, api_view
-from core.serializer import RegisterSerializer
-from core import dumps
-from rest_framework import status
-from django.contrib.auth import login, authenticate
-from rest_framework import generics
-from core import validators
-from core.models import Agent, Customer, Ticket
+"""
+This file contains API viewsets for handling user authentication,
+user registration, and retrieving details for customers, agents,
+and ticket assignments in the support system.
+
+It includes endpoints for:
+- User signup
+- User login
+- Fetching customer details
+- Fetching agent details
+- Ticket assignment
+
+Copyright (c) Spportix. All rights reserved.
+Written in 2025 by Dorna Raj Gyawali <dronarajgyawali@gmail.com>
+"""
+
+import datetime
 import logging
+from datetime import datetime
+
+from core import dumps, validators
+from core.models import Agent, Customer, Ticket
+from core.serializer import RegisterSerializer, TicketCreateSerializer
+from django.contrib.auth import authenticate, login
+from django.core.exceptions import ValidationError
+from rest_framework import status
+from rest_framework.decorators import APIView
+from rest_framework.response import Response
+
 logger = logging.getLogger(__name__)
 
 
@@ -19,17 +37,17 @@ class signupView(APIView):
     This endpoint allows a new user to register by providing
     their username, email, password, and role.
 
-    **Request Method:**
+    Request Method:
     ```
         POST
     ```
 
-    **Request URL:**
+    Request URL:
     ```
         /app/signup/
     ```
 
-    **Example Request Body:**
+    Example Request Body:
         ```
         {
             "user": {
@@ -57,16 +75,16 @@ class LoginView(APIView):
     """
     API endpoint for user login.
 
-    **Request Method:** POST
-    **URL:** /app/login/
+    Request Method: POST
+    URL: /app/login/
     ```
-    **Request Body:**
+    Request Body:
     {
         "username": "your_username",
         "password": "your_password"
     }
     ```
-    **Responses:**
+    Responses:
     - 200 OK: Login successful.
     - 400 Bad Request: Invalid credentials.
     - 405 Method Not Allowed: If request method is not POST.
@@ -92,10 +110,11 @@ class CustomerDetailView(APIView):
     """
     API endpoint for extracting customer related data.
 
-    **Request Method:** GET
+    Request Method: GET
 
-    **URL:** /app/customer/detail/
+    URL: /app/customer/detail/
     """
+
     def get(self, request, format=None):
         if not request.user.is_authenticated:
             return Response(dumps.CONTEXT_403)
@@ -113,9 +132,9 @@ class AgentDetailView(APIView):
     """
     API endpoint for extracting agents related data.
 
-    **Request Method:** GET
+    Request Method: GET
 
-    **URL:** /app/agent/detail/
+    URL: /app/agent/detail/
     """
 
     def get(self, request, format=None):
@@ -123,21 +142,57 @@ class AgentDetailView(APIView):
         if not agent_name:
             return Response(dumps.CONTEXT_403, status=status.HTTP_403_FORBIDDEN)
         details = Agent.get_details(agent_name)
-        print(details)
         return Response(details)
 
 
 agent_detail = AgentDetailView.as_view()
 
 
-class TicketAssign(APIView):
-    def get(self,request,format=None):
-        pass
+class TicketCreateView(APIView):
+    """
+     API endpoint to create Ticket.
 
-    # ticket/assign/<ticket:number>
-    def post(self,request,format=None):
-        ticket_obj = Ticket.objects.get(ticket_id=request.ticket_id)
-        checker = Ticket.objects.filter(name=ticket_obj)
-        if checker:
-            release_agent = Agent.objects.filter()
-            # Time constraint occur (todo)
+    Request Method: POST
+    URL: /app/ticket/create/
+    ```
+    Request Body:
+    {
+        "issue_title": "your issue title",
+        "issue_desc": "your issue desc",
+        "tags" : "your issue tags "
+    }
+    ```
+    """
+
+    def post(self, request, format=None):
+        user_username = validators.get_user(request, role="customer")
+        if not user_username:
+            return Response(
+                {"error": "Only customers can create tickets."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        customer = Customer.objects.filter(user__username=user_username).first()
+        if not customer:
+            return Response(
+                {"error": "Customer not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Generate ticket_id
+        date_part = datetime.now().strftime("%Y%m")
+        count = Ticket.objects.filter(created_at__year=datetime.now().year).count() + 1
+        ticket_id = f"{user_username[:3].upper()}{date_part}{count:02d}"
+
+        # Add the customer instance to the data
+        serializer = TicketCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(customer=customer, ticket_id=ticket_id)
+            return Response(
+                {"success": f"Your ticket {ticket_id} has been initialized."},
+                status=status.HTTP_201_CREATED,
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+ticket_create = TicketCreateView.as_view()

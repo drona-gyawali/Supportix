@@ -1,6 +1,5 @@
-from django.db import models
 from django.conf import settings
-
+from django.db import models
 
 # Need to add some field such as link, file, image etc... : Future Work...
 
@@ -14,14 +13,9 @@ class ChatGroup(models.Model):
 
 class GroupMessage(models.Model):
     group = models.ForeignKey(
-        ChatGroup,
-        related_name="chat_messages",
-        on_delete=models.CASCADE
+        ChatGroup, related_name="chat_messages", on_delete=models.CASCADE
     )
-    author = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE
-    )
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     parent = models.ForeignKey(
         "self",
         on_delete=models.CASCADE,

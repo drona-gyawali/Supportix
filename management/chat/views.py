@@ -1,12 +1,13 @@
-from .serializers import ChatSerializers, GroupSerializers
-from .models import ChatGroup, GroupMessage
-from rest_framework import generics, permissions, authentication
+from rest_framework import authentication, generics, permissions, status
 from rest_framework.response import Response
-from rest_framework import status
+
+from .models import ChatGroup, GroupMessage
+from .serializers import ChatSerializers, GroupSerializers
+
 
 class ChatMessageView(generics.ListAPIView):
     queryset = ChatGroup.objects.all()
-    permission_classes=[permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     authentication_classes = [authentication.SessionAuthentication]
     serializer_class = ChatSerializers
 
@@ -17,14 +18,17 @@ class ChatMessageView(generics.ListAPIView):
         chat_group_data = ChatSerializers(chat_group, many=True).data
         chat_message_data = GroupSerializers(group_message, many=True).data
 
-        return Response({"group_name": chat_group_data, "message": chat_message_data}, status=status.HTTP_200_OK)
+        return Response(
+            {"group_name": chat_group_data, "message": chat_message_data},
+            status=status.HTTP_200_OK,
+        )
 
 
 view = ChatMessageView.as_view()
 
 
 class ChatCreateView(generics.CreateAPIView):
-    permission_classes=[permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = GroupSerializers
     authentication_classes = [authentication.SessionAuthentication]
 
@@ -53,7 +57,9 @@ class ChatUpdateView(generics.UpdateAPIView):
     authentication_classes = [authentication.SessionAuthentication]
     lookup_field = "id"
 
+
 update = ChatUpdateView.as_view()
+
 
 class GroupNameCreate(generics.CreateAPIView):
     serializer_class = ChatSerializers
@@ -62,8 +68,9 @@ class GroupNameCreate(generics.CreateAPIView):
         permissions.IsAuthenticatedOrReadOnly,
     ]
 
-    
-group_create = GroupNameCreate.as_view() 
+
+group_create = GroupNameCreate.as_view()
+
 
 class GroupNameUpdate(generics.UpdateAPIView):
     serializer_class = ChatSerializers

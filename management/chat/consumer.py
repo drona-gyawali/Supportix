@@ -1,9 +1,11 @@
 import json
-from channels.generic.websocket import AsyncWebsocketConsumer
-from .models import ChatGroup, GroupMessage
-from django.contrib.auth import get_user_model
+
 from asgiref.sync import sync_to_async
+from channels.generic.websocket import AsyncWebsocketConsumer
+from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
+
+from .models import ChatGroup, GroupMessage
 
 User = get_user_model()
 

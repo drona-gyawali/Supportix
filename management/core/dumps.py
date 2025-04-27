@@ -1,13 +1,10 @@
 """
-Info:
- COPYRIGHT (C) Support System
- Written in 2025 by Dorna Raj Gyawali <dronarajgyawali@gmail.com>
-
- 
-This module contains predefined response messages for various HTTP status codes 
+This module contains predefined response messages for various HTTP status codes
 used in the Support System application.
-"""
 
+Copyright (c) Spportix. All rights reserved.
+Written in 2025 by Dorna Raj Gyawali <dronarajgyawali@gmail.com>
+"""
 
 SUCESS_SIGNUP = {"User created Successfully"}
 CONTEXT_400 = {"Invalid credentials"}
