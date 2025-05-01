@@ -117,12 +117,6 @@ class TicketDetailSerializer(serializers.ModelSerializer):
 
 
 class TicketCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Ticket
-        fields = ["issue_title", "issue_desc", "tag"]
-
-
-class TicketCreateSerializer(serializers.ModelSerializer):
     issue_desc = serializers.CharField(required=True, allow_blank=False)
 
     class Meta:

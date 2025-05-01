@@ -183,7 +183,6 @@ class TicketCreateView(APIView):
         count = Ticket.objects.filter(created_at__year=datetime.now().year).count() + 1
         ticket_id = f"{user_username[:3].upper()}{date_part}{count:02d}"
 
-        # Add the customer instance to the data
         serializer = TicketCreateSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(customer=customer, ticket_id=ticket_id)
