@@ -1,9 +1,7 @@
-from datetime import datetime
 from unittest.mock import patch
 
 from core.models import Agent, Customer, Department, Ticket
 from django.contrib.auth import get_user_model
-from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 

@@ -102,7 +102,7 @@ class Agent(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     @property
-    def has_capacity(self):
+    def has_capacity(self)-> property :
         return self.current_customers < self.max_customers
 
     @classmethod

@@ -1,19 +1,17 @@
 .env
-
 __pycache__/
 *.py[cod]
 *$py.class
 *.python-version
 
 *.log
-
+dump.rdb
 instruction.txt
 
 
 # Ignore virtual environments
 *.venv
 .env/
-
 .vscode/
 .idea/
 
