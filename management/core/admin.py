@@ -15,7 +15,7 @@ Classes:
 - DepartmentAdmin: Admin for the Department model with display and search options.
 - TicketAdmin: Admin for the Ticket model with display, filter, and search options.
 
-Copyright (c) Spportix. All rights reserved.
+Copyright (c) Supportix. All rights reserved.
 Written in 2025 by Dorna Raj Gyawali <dronarajgyawali@gmail.com>
 """
 

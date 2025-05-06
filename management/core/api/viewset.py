@@ -3,23 +3,26 @@ This file contains API viewsets for handling user authentication,
 user registration, and retrieving details for customers, agents,
 and ticket assignments in the support system.
 
-Copyright (c) Spportix. All rights reserved.
+Copyright (c) Supportix. All rights reserved.
 Written in 2025 by Dorna Raj Gyawali <dronarajgyawali@gmail.com>
 """
 
 import datetime
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from core import dumps, validators
+from core.constants import Status
 from core.models import Agent, Customer, Ticket
 from core.serializer import RegisterSerializer, TicketCreateSerializer
 from django.contrib.auth import authenticate, login
 from django.core.exceptions import ValidationError
+from django.utils.timezone import now
 from rest_framework import status
 from rest_framework.decorators import APIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from core.constants import Status
+
 logger = logging.getLogger(__name__)
 
 
@@ -109,8 +112,7 @@ class CustomerDetailView(APIView):
     """
 
     def get(self, request, format=None):
-        if not request.user.is_authenticated:
-            return Response(dumps.CONTEXT_403)
+        permission_classes = [IsAuthenticated]
         customer_name = validators.get_user(request, role="customer")
         if not customer_name:
             return Response(dumps.CONTEXT_403, status=status.HTTP_403_FORBIDDEN)
@@ -143,7 +145,7 @@ agent_detail = AgentDetailView.as_view()
 
 class TicketCreateView(APIView):
     """
-     API endpoint to create Ticket.
+    API endpoint to create Ticket.
 
     Request Method: POST
     URL: /app/ticket/create/
@@ -171,8 +173,8 @@ class TicketCreateView(APIView):
             return Response(
                 {"error": "Customer not found."}, status=status.HTTP_404_NOT_FOUND
             )
-        
-        date_part = datetime.now().strftime("%Y%m")
+
+        date_part = now().strftime("%Y%m")
         count = Ticket.objects.filter(created_at__year=datetime.now().year).count() + 1
         ticket_id = f"{user_username[:3].upper()}{date_part}{count:02d}"
 
@@ -180,7 +182,7 @@ class TicketCreateView(APIView):
         if serializer.is_valid():
             serializer.save(customer=customer, ticket_id=ticket_id)
             return Response(
-                {"success": f"Your ticket {ticket_id} has been initialized."},
+                {"Ticket Id": f"{ticket_id}"},
                 status=status.HTTP_201_CREATED,
             )
 
@@ -189,38 +191,65 @@ class TicketCreateView(APIView):
 
 ticket_create = TicketCreateView.as_view()
 
+
 class TicketAssignview(APIView):
+    """
+    API endpoint to assign a ticket to an available agent.
+
+    Request Method: GET
+    URL: /app/ticket/<id>/assign/
+    ```
+    Path Parameter:
+    - id: Ticket ID to be assigned.
+
+    Responses:
+    - 200 OK: Ticket successfully assigned to an agent.
+    - 400 Bad Request: Invalid ticket ID or no available agent.
+    ```
+    """
+
     def get(self, request, id, format=None):
         ticket = Ticket.objects.filter(ticket_id=id).first()
         if not ticket:
-            return Response({
-                "Error": "Invalid ticket id"
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        customer = Customer.objects.first()
+            return Response(
+                {"Error": "Invalid ticket id"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
         agent = Agent.objects.filter(is_available=True).first()
 
         if agent and agent.has_capacity:
             ticket.agent = agent
             ticket.status = Status.ASSIGNED
             ticket.save()
-            
+
             agent.max_customers -= 1
             agent.current_customers += 1
             agent.save()
 
-            return Response({
-                "Success": f"Ticket no. {id} assigned to agent {agent.user.username}"
-            }, status=status.HTTP_200_OK)
-        
+            return Response(
+                {
+                    "Ticket id": f"{id}",
+                    "Customer": f"{ticket.customer.user.username}",
+                    "Is paid": f"{ticket.customer.is_paid}",
+                    "Agent": f"{ticket.agent.user.username}",
+                    "Status": f"{ticket.status}",
+                },
+                status=status.HTTP_200_OK,
+            )
+
         ticket.status = Status.WAITING
         ticket.save()
-        return Response({
-            "Error": "No available agents"
-        }, status=status.HTTP_200_OK)
-    
+
+        return Response(
+            {
+                "Ticket id": f"{id}",
+                "Customer": f"{ticket.customer.user.username}",
+                "Is paid": f"{ticket.customer.is_paid}",
+                "Agent": f"{ticket.agent.user.username}" if ticket.agent else None,
+                "Status": f"{ticket.status}",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+
 ticket_assign = TicketAssignview.as_view()
-   
-
-
-

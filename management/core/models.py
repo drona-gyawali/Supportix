@@ -14,7 +14,7 @@ Constants:
     ROLE: User roles (e.g., customer, agent, admin).
     CONTEXT_403: Forbidden context for invalid operations.
 
-Copyright (c) Spportix. All rights reserved.
+Copyright (c) Supportix. All rights reserved.
 Written in 2025 by Dorna Raj Gyawali <dronarajgyawali@gmail.com>
 """
 
@@ -102,7 +102,7 @@ class Agent(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     @property
-    def has_capacity(self)-> property :
+    def has_capacity(self) -> property:
         return self.current_customers < self.max_customers
 
     @classmethod

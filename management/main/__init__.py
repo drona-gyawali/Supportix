@@ -6,6 +6,7 @@ restricts what is exported when `from management.main import *` is used.
 """
 
 from __future__ import absolute_import, unicode_literals
+
 from main.celery import app as celery_app
 
 __all__ = ("celery_app",)

@@ -1,7 +1,7 @@
 """
 This module defines constants used across the Support System application.
 
-Copyright (c) Spportix. All rights reserved.
+Copyright (c) Supportix. All rights reserved.
 Written in 2025 by Dorna Raj Gyawali <dronarajgyawali@gmail.com>
 """
 

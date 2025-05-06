@@ -2,7 +2,7 @@
 This module contains predefined response messages for various HTTP status codes
 used in the Support System application.
 
-Copyright (c) Spportix. All rights reserved.
+Copyright (c) Supportix. All rights reserved.
 Written in 2025 by Dorna Raj Gyawali <dronarajgyawali@gmail.com>
 """
 

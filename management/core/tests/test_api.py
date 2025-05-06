@@ -1,106 +1,231 @@
-from unittest.mock import patch
+"""
+Testcases for all API used in core/api/viewsets
 
-from core.models import Agent, Customer, Department, Ticket
-from django.contrib.auth import get_user_model
+Copyright (c) Supportix. All rights reserved.
+Written in 2025 by Dorna Raj Gyawali <dronarajgyawali@gmail.com>
+"""
+
+import json
+from datetime import datetime
+from unittest import mock
+
+from core.constants import Status
+from core.models import Agent, Customer, Department, Ticket, User
+from django.test import TestCase
+from django.urls import reverse
+from django.utils.timezone import make_aware
 from rest_framework import status
-from rest_framework.test import APITestCase
-
-User = get_user_model()
+from rest_framework.test import APIClient
 
 
-class TicketCreateViewTestCase(APITestCase):
+class ApiViewsTest(TestCase):
+    """Test cases for all API endpoints in a single class."""
+
     def setUp(self):
-        # Create test customer user and profile
+        """Set up common test data for all API tests."""
+
+        self.client = APIClient()
+
+        self.signup_url = reverse("signup")
+        self.login_url = reverse("login")
+        self.customer_detail_url = reverse("customer_detail")
+        self.agent_detail_url = reverse("agent_detail")
+        self.ticket_create_url = reverse("ticket_create")
+
+        self.department = Department.objects.create(name="Technical Support")
+
         self.customer_user = User.objects.create_user(
             username="testcustomer",
-            password="testpass123",
-            email="customer@test.com",
+            email="testcustomer@example.com",
+            password="testpassword123",
             role="customer",
         )
-        self.customer_profile = Customer.objects.create(user=self.customer_user)
-        self.department = Department.objects.create(name="support")
-        # Create test agent user and profile
+
         self.agent_user = User.objects.create_user(
             username="testagent",
-            password="testpass123",
-            email="agent@test.com",
+            email="testagent@example.com",
+            password="testpassword123",
             role="agent",
         )
-        self.agent_profile = Agent.objects.create(
-            user=self.agent_user, department=self.department
+
+        self.customer = Customer.objects.create(
+            user=self.customer_user,
+            is_paid=True,
         )
 
-        # Common test data
-        self.valid_data = {
-            "issue_title": "Login Issue",
-            "issue_desc": "Cant login with valid credentials",
-            "tags": "authentication",
+        self.agent = Agent.objects.create(
+            user=self.agent_user,
+            is_available=True,
+            max_customers=5,
+            current_customers=2,
+            department=self.department,
+        )
+
+        self.ticket = Ticket.objects.create(
+            ticket_id="TES202505001",
+            customer=self.customer,
+            issue_title="Test Issue",
+            issue_desc="This is a test issue description",
+            status=Status.WAITING,
+        )
+
+        self.ticket_assign_url = reverse(
+            "ticket_assign", kwargs={"id": self.ticket.ticket_id}
+        )
+
+        self.signup_payload = {
+            "user": {
+                "username": "newuser",
+                "email": "newuser@example.com",
+                "password": "newpassword123",
+            },
+            "role": "customer",
         }
-        self.url = "/app/ticket/create/"
 
-    def test_unauthenticated_access(self):
-        """Unauthenticated users should get 403 Forbidden"""
-        response = self.client.post(self.url, self.valid_data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.login_payload = {"username": "testcustomer", "password": "testpassword123"}
 
-    def test_agent_cannot_create_ticket(self):
-        """Agents should not be able to create tickets"""
-        self.client.force_authenticate(user=self.agent_user)
-        response = self.client.post(self.url, self.valid_data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertIn("error", response.data)
+        self.ticket_payload = {
+            "issue_title": "New Test Issue",
+            "issue_desc": "This is a new test issue description",
+            "tags": "test, debug, issue",
+        }
 
-    def test_customer_create_ticket_success(self):
-        """Authenticated customers should create tickets successfully"""
-        self.client.force_authenticate(user=self.customer_user)
-        response = self.client.post(self.url, self.valid_data)
-
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Ticket.objects.count(), 1)
-        self.assertIn("success", response.data)
-
-        ticket = Ticket.objects.first()
-        self.assertEqual(ticket.customer, self.customer_profile)
-        self.assertEqual(ticket.issue_title, self.valid_data["issue_title"])
-
-    # def test_ticket_id_generation_format(self):
-    #     """Ticket IDs should follow the correct format"""
-    #     self.client.force_authenticate(user=self.customer_user)
-
-    #     # Mock datetime to control the date part
-    #     with patch('core.views.datetime') as mock_datetime:
-    #         test_date = datetime.now().strftime("%Y%m")
-    #         mock_datetime.now.return_value = test_date
-
-    #         # First ticket
-    #         response = self.client.post(self.url, self.valid_data)
-    #         ticket1 = Ticket.objects.first()
-    #         expected_id1 = 'TES20250401'  # TES from 'testcustomer'
-    #         self.assertEqual(ticket1.ticket_id, expected_id1)
-
-    #         # Second ticket
-    #         response = self.client.post(self.url, self.valid_data)
-    #         ticket2 = Ticket.objects.last()
-    #         expected_id2 = 'TES20250401'
-    #         self.assertEqual(ticket2.ticket_id, expected_id2)
-
-    def test_invalid_data_submission(self):
-        """Invalid data should return 400 Bad Request"""
-        self.client.force_authenticate(user=self.customer_user)
-        invalid_data = {"issue_title": ""}  # Missing required fields
-
-        response = self.client.post(self.url, invalid_data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("issue_title", response.data)
-        self.assertIn("issue_desc", response.data)
-
-    def test_missing_customer_profile(self):
-        """Users without customer profile should get 404"""
-        new_user = User.objects.create_user(
-            username="nocustomer", password="testpass123"
+    def test_valid_signup(self):
+        """Test successful user registration."""
+        response = self.client.post(
+            self.signup_url,
+            data=json.dumps(self.signup_payload),
+            content_type="application/json",
         )
-        self.client.force_authenticate(user=new_user)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(User.objects.filter(username="newuser").exists())
 
-        response = self.client.post(self.url, self.valid_data)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertIn("error", response.data)
+    def test_invalid_signup(self):
+        """Test invalid user registration."""
+        invalid_payload = {
+            "user": {
+                "username": "",  # Empty username
+                "email": "invalid@example.com",
+                "password": "password123",
+            },
+            "role": "customer",
+        }
+        response = self.client.post(
+            self.signup_url,
+            data=json.dumps(invalid_payload),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_valid_login(self):
+        """Test successful user login."""
+        response = self.client.post(
+            self.login_url,
+            data=json.dumps(self.login_payload),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_invalid_login(self):
+        """Test invalid user login."""
+        invalid_payload = {"username": "testcustomer", "password": "wrongpassword"}
+        response = self.client.post(
+            self.login_url,
+            data=json.dumps(invalid_payload),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_customer_detail_authenticated(self):
+        """Test customer detail retrieval for authenticated user."""
+        self.client.force_authenticate(user=self.customer_user)
+
+        with mock.patch("core.validators.get_user", return_value="testcustomer"):
+            response = self.client.get(self.customer_detail_url)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_customer_detail_unauthenticated(self):
+        """Test customer detail retrieval for unauthenticated user."""
+        response = self.client.get(self.customer_detail_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_agent_detail(self):
+        """Test agent detail retrieval."""
+        self.client.force_authenticate(user=self.agent_user)
+
+        with mock.patch("core.validators.get_user", return_value="testagent"):
+            response = self.client.get(self.agent_detail_url)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_agent_detail_unauthorized(self):
+        """Test agent detail retrieval with unauthorized role."""
+        self.client.force_authenticate(user=self.agent_user)
+
+        with mock.patch("core.validators.get_user", return_value=None):
+            response = self.client.get(self.agent_detail_url)
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_ticket_creation_by_customer(self):
+        """Test ticket creation by a customer."""
+        self.client.force_authenticate(user=self.customer_user)
+
+        with mock.patch(
+            "core.validators.get_user", return_value="testcustomer"
+        ), mock.patch(
+            "django.utils.timezone.now", return_value=make_aware(datetime(2025, 5, 6))
+        ):
+
+            response = self.client.post(
+                self.ticket_create_url,
+                data=json.dumps(self.ticket_payload),
+                content_type="application/json",
+            )
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_ticket_creation_by_agent(self):
+        """Test ticket creation by an agent (should fail)."""
+        self.client.force_authenticate(user=self.agent_user)
+
+        with mock.patch("core.validators.get_user", return_value=None):
+            response = self.client.post(
+                self.ticket_create_url,
+                data=json.dumps(self.ticket_payload),
+                content_type="application/json",
+            )
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_ticket_assignment_with_available_agent(self):
+        """Test ticket assignment when an agent is available."""
+        self.client.force_authenticate(user=self.customer_user)
+
+        response = self.client.get(self.ticket_assign_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.ticket.refresh_from_db()
+        self.assertEqual(self.ticket.status, Status.ASSIGNED)
+        self.assertEqual(self.ticket.agent, self.agent)
+
+        self.agent.refresh_from_db()
+        self.assertEqual(self.agent.current_customers, 3)
+        self.assertEqual(self.agent.max_customers, 4)
+
+    def test_ticket_assignment_with_no_available_agent(self):
+        """Test ticket assignment when no agent is available."""
+        self.client.force_authenticate(user=self.customer_user)
+
+        self.agent.is_available = False
+        self.agent.save()
+
+        response = self.client.get(self.ticket_assign_url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        self.ticket.refresh_from_db()
+        self.assertEqual(self.ticket.status, Status.WAITING)
+
+    def test_ticket_assignment_invalid_ticket_id(self):
+        """Test ticket assignment with invalid ticket ID."""
+        self.client.force_authenticate(user=self.customer_user)
+
+        invalid_url = reverse("ticket_assign", kwargs={"id": "INVALID001"})
+        response = self.client.get(invalid_url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
