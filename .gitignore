@@ -5,7 +5,10 @@ __pycache__/
 *.python-version
 
 *.log
-dump.rdb
+*/dump.rdb
+*/celerybeat-schedule.bak
+*/celerybeat-schedule.dir
+*/celerybeat-schedule.dat
 instruction.txt
 
 

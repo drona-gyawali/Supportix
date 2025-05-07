@@ -6,11 +6,12 @@ Written in 2025 by Dorna Raj Gyawali <dronarajgyawali@gmail.com>
 """
 
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from unittest import mock
 
 from core.constants import Status
 from core.models import Agent, Customer, Department, Ticket, User
+from django.db.models import F
 from django.test import TestCase
 from django.urls import reverse
 from django.utils.timezone import make_aware
@@ -209,18 +210,56 @@ class ApiViewsTest(TestCase):
         self.assertEqual(self.agent.current_customers, 3)
         self.assertEqual(self.agent.max_customers, 4)
 
-    def test_ticket_assignment_with_no_available_agent(self):
-        """Test ticket assignment when no agent is available."""
+    def test_ticket_fallback_to_queue_and_position(self):
+        """When no agent is available, ticket should go into WAITING with correct queue_position and HTTP 202."""
+
+        Agent.objects.update(is_available=False, current_customers=F("max_customers"))
+
         self.client.force_authenticate(user=self.customer_user)
-
-        self.agent.is_available = False
-        self.agent.save()
-
         response = self.client.get(self.ticket_assign_url)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
         self.ticket.refresh_from_db()
         self.assertEqual(self.ticket.status, Status.WAITING)
+
+        self.assertIn("queue_position", response.data)
+        self.assertEqual(response.data["queue_position"], 1)
+
+        self.assertIsNotNone(self.ticket.queued_at)
+
+    def test_multiple_tickets_queue_positions(self):
+        """
+        When two tickets are in the queue (no agents available),the second ticket should report queue_position = 2.
+        """
+        Agent.objects.update(is_available=False, current_customers=F("max_customers"))
+
+        self.client.force_authenticate(user=self.customer_user)
+        first_response = self.client.get(self.ticket_assign_url)
+        self.assertEqual(first_response.status_code, status.HTTP_202_ACCEPTED)
+
+        self.ticket.refresh_from_db()
+        self.assertEqual(self.ticket.status, Status.WAITING)
+        self.assertIsNotNone(self.ticket.queued_at)
+
+        second_ticket = Ticket.objects.create(
+            ticket_id="SECOND123",
+            customer=self.ticket.customer,
+            status=Status.WAITING,
+            created_at=self.ticket.created_at + timedelta(seconds=1),
+        )
+
+        second_url = reverse("ticket_assign", kwargs={"id": second_ticket.ticket_id})
+        second_response = self.client.get(second_url)
+
+        self.assertEqual(second_response.status_code, status.HTTP_202_ACCEPTED)
+
+        second_ticket.refresh_from_db()
+        self.assertEqual(second_ticket.status, Status.WAITING)
+        self.assertIsNotNone(second_ticket.queued_at)
+
+        self.assertIn("queue_position", second_response.data)
+        self.assertEqual(second_response.data["queue_position"], 2)
 
     def test_ticket_assignment_invalid_ticket_id(self):
         """Test ticket assignment with invalid ticket ID."""
@@ -228,4 +267,4 @@ class ApiViewsTest(TestCase):
 
         invalid_url = reverse("ticket_assign", kwargs={"id": "INVALID001"})
         response = self.client.get(invalid_url)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

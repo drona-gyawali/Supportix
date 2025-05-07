@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import os
 from pathlib import Path
 
+from celery.schedules import crontab
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -48,6 +49,7 @@ EXTERNAL_APPS = [
     "chat",
     "core",
     "channels",
+    "django_celery_beat",
 ]
 INSTALLED_APPS += EXTERNAL_APPS
 
@@ -160,3 +162,17 @@ CELERY_BROKER_URL = "redis://localhost:6379/0"
 CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
+CELERY_TIMEZONE = TIME_ZONE
+
+CELERY_BEAT_SCHEDULER = "celery.beat:PersistentScheduler"
+
+CELERY_BEAT_SCHEDULE = {
+    "assign_tickets_every_minute": {
+        "task": "core.tasks.process_ticket_queue",
+        "schedule": crontab(minute="*/1"),
+    },
+    "cleanup_old_completed_tickets": {
+        "task": "core.tasks.delete_completed_tickets",
+        "schedule": crontab(hour=3, minute=0),
+    },
+}

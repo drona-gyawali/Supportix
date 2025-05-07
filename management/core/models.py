@@ -149,6 +149,7 @@ class Ticket(models.Model):
         max_length=20, choices=Status.choices, default=Status.WAITING
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    queued_at = models.DateTimeField(null=True, blank=True)
 
     @classmethod
     def get_ticket_details(cls, ticket_id):

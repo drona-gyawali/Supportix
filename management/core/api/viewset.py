@@ -9,14 +9,16 @@ Written in 2025 by Dorna Raj Gyawali <dronarajgyawali@gmail.com>
 
 import datetime
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 
 from core import dumps, validators
 from core.constants import Status
 from core.models import Agent, Customer, Ticket
 from core.serializer import RegisterSerializer, TicketCreateSerializer
+from core.tasks import process_ticket_queue
 from django.contrib.auth import authenticate, login
-from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.utils import timezone
 from django.utils.timezone import now
 from rest_framework import status
 from rest_framework.decorators import APIView
@@ -198,58 +200,91 @@ class TicketAssignview(APIView):
 
     Request Method: GET
     URL: /app/ticket/<id>/assign/
-    ```
+
     Path Parameter:
     - id: Ticket ID to be assigned.
 
     Responses:
-    - 200 OK: Ticket successfully assigned to an agent.
+    - 200 OK:
+        - Ticket successfully assigned to an agent.
+        - If the ticket is already assigned, returns the current assignment details.
+    - 202 Accepted:
+        - Ticket is queued due to no available agents. Returns the queue position.
     - 400 Bad Request: Invalid ticket ID or no available agent.
-    ```
+    - 404 Not Found: Ticket with the given ID does not exist.
     """
 
     def get(self, request, id, format=None):
-        ticket = Ticket.objects.filter(ticket_id=id).first()
-        if not ticket:
-            return Response(
-                {"Error": "Invalid ticket id"}, status=status.HTTP_400_BAD_REQUEST
+        with transaction.atomic():
+            ticket = Ticket.objects.select_for_update().filter(ticket_id=id).first()
+            agent = (
+                Agent.objects.select_for_update()
+                .filter(is_available=True, max_customers__gt=0)
+                .first()
             )
 
-        agent = Agent.objects.filter(is_available=True).first()
+            if not ticket:
+                return Response(
+                    {"Error": "Invalid ticket id"}, status=status.HTTP_404_NOT_FOUND
+                )
 
-        if agent and agent.has_capacity:
-            ticket.agent = agent
-            ticket.status = Status.ASSIGNED
-            ticket.save()
+            if ticket.status == Status.ASSIGNED:
+                return Response(
+                    {
+                        "ticket_id": f"{id}",
+                        "customer": f"{ticket.customer.user.username}",
+                        "is_paid": f"{ticket.customer.is_paid}",
+                        "agent": f"{ticket.agent.user.username}",
+                        "status": f"{ticket.status}",
+                    },
+                    status=status.HTTP_200_OK,
+                )
 
-            agent.max_customers -= 1
-            agent.current_customers += 1
-            agent.save()
+            if agent and agent.has_capacity:
+                ticket.agent = agent
+                ticket.status = Status.ASSIGNED
+                ticket.save()
+
+                agent.max_customers -= 1
+                agent.current_customers += 1
+                agent.save()
+
+                return Response(
+                    {
+                        "ticket_id": f"{id}",
+                        "customer": f"{ticket.customer.user.username}",
+                        "is_paid": f"{ticket.customer.is_paid}",
+                        "agent": f"{ticket.agent.user.username}",
+                        "status": f"{ticket.status}",
+                    },
+                    status=status.HTTP_200_OK,
+                )
+            if ticket.queued_at is None:
+                ticket.status = Status.WAITING
+                ticket.queued_at = timezone.now()
+                ticket.save()
+                process_ticket_queue.delay()
+            else:
+                ticket.status = Status.WAITING
+                ticket.save()
+
+            position = (
+                Ticket.objects.filter(
+                    status=Status.WAITING, created_at__lt=ticket.created_at
+                ).count()
+            ) + 1
 
             return Response(
                 {
-                    "Ticket id": f"{id}",
-                    "Customer": f"{ticket.customer.user.username}",
-                    "Is paid": f"{ticket.customer.is_paid}",
-                    "Agent": f"{ticket.agent.user.username}",
-                    "Status": f"{ticket.status}",
+                    "ticket_id": id,
+                    "customer": ticket.customer.user.username,
+                    "is_paid": ticket.customer.is_paid,
+                    "agent": ticket.agent.user.username if ticket.agent else None,
+                    "status": ticket.status,
+                    "queue_position": position,
                 },
-                status=status.HTTP_200_OK,
+                status=status.HTTP_202_ACCEPTED,
             )
-
-        ticket.status = Status.WAITING
-        ticket.save()
-
-        return Response(
-            {
-                "Ticket id": f"{id}",
-                "Customer": f"{ticket.customer.user.username}",
-                "Is paid": f"{ticket.customer.is_paid}",
-                "Agent": f"{ticket.agent.user.username}" if ticket.agent else None,
-                "Status": f"{ticket.status}",
-            },
-            status=status.HTTP_400_BAD_REQUEST,
-        )
 
 
 ticket_assign = TicketAssignview.as_view()
