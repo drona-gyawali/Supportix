@@ -16,7 +16,6 @@ from core.constants import Status
 from core.models import Agent, Customer, Ticket
 from core.serializer import RegisterSerializer, TicketCreateSerializer
 from core.tasks import process_ticket_queue
-from django.contrib.auth import authenticate, login
 from django.db import transaction
 from django.utils import timezone
 from django.utils.timezone import now
@@ -24,6 +23,7 @@ from rest_framework import status
 from rest_framework.decorators import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
 
 logger = logging.getLogger(__name__)
 
@@ -69,39 +69,58 @@ class signupView(APIView):
 signupView = signupView.as_view()
 
 
-class LoginView(APIView):
+class Logout(APIView):
     """
-    API endpoint for user login.
+    API endpoint for user logout.
 
-    Request Method: POST
-    URL: /app/login/
+    This endpoint allows a user to log out by blacklisting their
+    refresh token.
+
+    Request Method:
     ```
-    Request Body:
-    {
-        "username": "your_username",
-        "password": "your_password"
-    }
+        POST
     ```
+
+    Request URL:
+    ```
+        /api/logout/
+    ```
+
+    Example Request Body:
+        ```
+        {
+            "refresh": "your_refresh_token"
+        }
+        ```
+
     Responses:
-    - 200 OK: Login successful.
-    - 400 Bad Request: Invalid credentials.
-    - 405 Method Not Allowed: If request method is not POST.
+    - 205 Reset Content: Logout successful.
+    - 400 Bad Request: Missing or invalid refresh token.
     """
 
-    # ToDo: Add Token based authentication
     def post(self, request, format=None):
-        if request.method == "POST":
-            username = request.data.get("username")
-            password = request.data.get("password")
-            process_login = authenticate(request, username=username, password=password)
-            if process_login is not None:
-                login(request, process_login)
-                return Response({"Login Succuessful"}, status=status.HTTP_200_OK)
-            return Response(dumps.CONTEXT_400, status=status.HTTP_400_BAD_REQUEST)
-        return Response(dumps.CONTEXT_405, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        refresh_token = request.data.get("refresh")
+        if not refresh_token:
+            return Response(
+                {"detail": "Refresh token required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response(
+                {"detail": "Logout successful"},
+                status=status.HTTP_205_RESET_CONTENT,
+            )
+        except Exception as exc:
+            return Response(
+                {"detail": str(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
 
-loginView = LoginView.as_view()
+logout = Logout.as_view()
 
 
 class CustomerDetailView(APIView):

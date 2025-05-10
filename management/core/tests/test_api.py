@@ -28,11 +28,11 @@ class ApiViewsTest(TestCase):
         self.client = APIClient()
 
         self.signup_url = reverse("signup")
-        self.login_url = reverse("login")
+        self.login_url = reverse("token-obtain-pair")
         self.customer_detail_url = reverse("customer_detail")
         self.agent_detail_url = reverse("agent_detail")
         self.ticket_create_url = reverse("ticket_create")
-
+        self.logout_url = reverse("logout")
         self.department = Department.objects.create(name="Technical Support")
 
         self.customer_user = User.objects.create_user(
@@ -105,7 +105,7 @@ class ApiViewsTest(TestCase):
         """Test invalid user registration."""
         invalid_payload = {
             "user": {
-                "username": "",  # Empty username
+                "username": "",
                 "email": "invalid@example.com",
                 "password": "password123",
             },
@@ -135,7 +135,34 @@ class ApiViewsTest(TestCase):
             data=json.dumps(invalid_payload),
             content_type="application/json",
         )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_logout(self):
+        login_resp = self.client.post(
+            self.login_url,
+            data=json.dumps(self.login_payload),
+            content_type="application/json",
+        )
+        self.assertEqual(login_resp.status_code, status.HTTP_200_OK)
+        access = login_resp.data["access"]
+        refresh = login_resp.data["refresh"]
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+
+        logout_resp = self.client.post(
+            self.logout_url,
+            data=json.dumps({"refresh": refresh}),
+            content_type="application/json",
+        )
+        self.assertEqual(logout_resp.status_code, status.HTTP_205_RESET_CONTENT)
+        self.assertEqual(logout_resp.data["detail"], "Logout successful")
+
+        refresh_resp = self.client.post(
+            reverse("token-refresh-pair"),
+            data=json.dumps({"refresh": refresh}),
+            content_type="application/json",
+        )
+        self.assertEqual(refresh_resp.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_customer_detail_authenticated(self):
         """Test customer detail retrieval for authenticated user."""

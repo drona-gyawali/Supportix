@@ -61,6 +61,13 @@ class DepartmentAdmin(admin.ModelAdmin):
 
 @admin.register(Ticket)
 class TicketAdmin(admin.ModelAdmin):
-    list_display = ("ticket_id", "customer", "agent", "status", "created_at")
+    list_display = (
+        "ticket_id",
+        "customer",
+        "agent",
+        "status",
+        "created_at",
+        "queued_at",
+    )
     list_filter = ("status", "created_at")
     search_fields = ("ticket_id", "customer__user__username", "agent__user__username")
