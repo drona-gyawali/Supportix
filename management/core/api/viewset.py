@@ -114,8 +114,9 @@ class Logout(APIView):
                 status=status.HTTP_205_RESET_CONTENT,
             )
         except Exception as exc:
+            logger.error("Error during logout: %s", exc, exc_info=True)
             return Response(
-                {"detail": str(exc)},
+                {"detail": "An error occurred during logout. Please try again later."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
