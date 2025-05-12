@@ -45,11 +45,11 @@ def check_agent_status(customer_id):
 
 def get_user(request, role=None):
     """
-    Return the username if authenticated and matching the given role, else None.
+    Return the username if authenticated and else None.
     """
     user = request.user
     if not user.is_authenticated:
         return None
-    if role and user.role != role:
+    if user.role != role:
         return None
     return user.username

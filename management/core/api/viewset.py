@@ -14,9 +14,11 @@ from datetime import datetime
 from core import dumps, validators
 from core.constants import Status
 from core.models import Agent, Customer, Ticket
+from core.permissions import CanEditOwnOrAdmin
 from core.serializer import RegisterSerializer, TicketCreateSerializer
 from core.tasks import process_ticket_queue
 from django.db import transaction
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.timezone import now
 from rest_framework import status
@@ -130,16 +132,23 @@ class CustomerDetailView(APIView):
 
     Request Method: GET
 
-    URL: /app/customer/detail/
+    URL: /app/customer/<int:pk>/detail/
     """
 
-    def get(self, request, format=None):
-        permission_classes = [IsAuthenticated]
-        customer_name = validators.get_user(request, role="customer")
-        if not customer_name:
-            return Response(dumps.CONTEXT_403, status=status.HTTP_403_FORBIDDEN)
-        details = Customer.get_details(customer_name)
-        return Response(details)
+    permission_classes = [IsAuthenticated | CanEditOwnOrAdmin]
+
+    def get(self, request, pk, format=None):
+        customer = get_object_or_404(Customer, id=pk)
+        return Response(
+            {
+                "id": customer.id,
+                "username": customer.user.username,
+                "full_name": f"{customer.user.first_name} {customer.user.last_name}".strip(),
+                "is_paid": customer.is_paid,
+                "raise_issue": customer.solved_issues,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 customer_detail = CustomerDetailView.as_view()
@@ -151,15 +160,24 @@ class AgentDetailView(APIView):
 
     Request Method: GET
 
-    URL: /app/agent/detail/
+    URL: /app/agent/<int:pk>/detail/
     """
 
-    def get(self, request, format=None):
-        agent_name = validators.get_user(request, role="agent")
-        if not agent_name:
-            return Response(dumps.CONTEXT_403, status=status.HTTP_403_FORBIDDEN)
-        details = Agent.get_details(agent_name)
-        return Response(details)
+    permission_classes = [IsAuthenticated | CanEditOwnOrAdmin]
+
+    def get(self, request, pk, format=None):
+        agent = get_object_or_404(Agent, id=pk)
+        return Response(
+            {
+                "id": agent.id,
+                "username": agent.user.username,
+                "full_name": f"{agent.user.first_name} {agent.user.last_name}".strip(),
+                "department": agent.department.name,
+                "is_available": agent.is_available,
+                "served_customers": agent.current_customers,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 agent_detail = AgentDetailView.as_view()
