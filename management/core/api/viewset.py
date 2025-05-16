@@ -213,7 +213,7 @@ class TicketCreateView(APIView):
             return Response(
                 {"error": "Customer not found."}, status=status.HTTP_404_NOT_FOUND
             )
-
+        # Todo: Make more robust
         date_part = now().strftime("%Y%m")
         count = Ticket.objects.filter(created_at__year=datetime.now().year).count() + 1
         ticket_id = f"{user_username[:3].upper()}{date_part}{count:02d}"

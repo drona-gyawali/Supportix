@@ -28,9 +28,11 @@ class Status(models.TextChoices):
     * Assigned: Task has been assigned to an agent.
     * Progress: Task is currently in progress.
     * Completed: Task has been completed.
+    * Closed: Task has been closed.
     """
 
     WAITING = "waiting", "Waiting"
     ASSIGNED = "assigned", "Assigned"
     PROGRESS = "progress", "Progress"
     COMPLETED = "completed", "Completed"
+    CLOSED = "closed", "Closed"

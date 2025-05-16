@@ -112,6 +112,7 @@ class TicketDetailSerializer(serializers.ModelSerializer):
             "status",
             "tags",
             "created_at",
+            "queued_at",
         )
         read_only_fields = ("id", "ticket_id", "created_at")
 

@@ -17,6 +17,7 @@ instruction.txt
 .env/
 .vscode/
 .idea/
-
+.mypy_cache/
+task.do
 
 **/migrations/*.pyc

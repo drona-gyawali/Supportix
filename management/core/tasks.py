@@ -1,9 +1,11 @@
 from datetime import timedelta
 
 from celery import shared_task
+from core.automation.state_machine import TicketStateMachine
 from core.constants import Status
 from core.models import Agent, Ticket
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 
@@ -41,12 +43,20 @@ def process_ticket_queue(self):
 @shared_task(bind=True)
 def delete_completed_tickets(self):
     """
-    Delete tickets that have been in COMPLETED status for over 60 days.
-    Relies on updated_at timestamp.
+    Delete tickets that have been COMPLETED or ClOSED status for over 60 days.
+    *Relies on updated_at timestamp.
     """
     cutoff = timezone.now() - timedelta(days=60)
     with transaction.atomic():
         deleted_count, _ = Ticket.objects.filter(
-            status=Status.COMPLETED, updated_at__lte=cutoff
+            status=Status.COMPLETED | Q(Status.CLOSED), updated_at__lte=cutoff
         ).delete()
     print(f"Deleted {deleted_count} completed tickets older than 60 days.")
+
+
+@shared_task(bind=True)
+def process_state_changed(ticket_id, new_staus):
+    with transaction.atomic:
+        ticket_id = Ticket.objects.select_for_update.get(ticket_id=ticket_id)
+        state_machine = TicketStateMachine(ticket_id)
+        return state_machine.transition_to(new_staus)
