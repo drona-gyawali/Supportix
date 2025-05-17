@@ -1,12 +1,13 @@
 from datetime import timedelta
 
 from celery import shared_task
-from core.automation.state_machine import TicketStateMachine
-from core.constants import Status
-from core.models import Agent, Ticket
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
+
+from core.automation.state_machine import TicketStateMachine
+from core.constants import Status
+from core.models import Agent, Ticket
 
 
 @shared_task(bind=True)
@@ -55,8 +56,8 @@ def delete_completed_tickets(self):
 
 
 @shared_task(bind=True)
-def process_state_changed(ticket_id, new_staus):
+def process_state_changed(ticket_id, new_status):
     with transaction.atomic:
         ticket_id = Ticket.objects.select_for_update.get(ticket_id=ticket_id)
         state_machine = TicketStateMachine(ticket_id)
-        return state_machine.transition_to(new_staus)
+        return state_machine.transition_to(new_status)

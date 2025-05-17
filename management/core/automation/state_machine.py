@@ -8,8 +8,8 @@ Written in 2025 by Dorna Raj Gyawali <dronarajgyawali@gmail.com>
 
 
 class TicketStateMachine:
-    def __init__(self, ticket_id):
-        self.ticket_id = ticket_id
+    def __init__(self, ticket):
+        self.ticket_id = ticket.id
 
     def can_state_change(self, new_status):
         transition = {

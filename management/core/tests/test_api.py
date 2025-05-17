@@ -9,14 +9,15 @@ import json
 from datetime import datetime, timedelta
 from unittest import mock
 
-from core.constants import Status
-from core.models import Agent, Customer, Department, Ticket, User
 from django.db.models import F
 from django.test import TestCase
 from django.urls import reverse
 from django.utils.timezone import make_aware
 from rest_framework import status
 from rest_framework.test import APIClient
+
+from core.constants import Status
+from core.models import Agent, Customer, Department, Ticket, User
 
 
 class ApiViewsTest(TestCase):

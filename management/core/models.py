@@ -18,12 +18,15 @@ Copyright (c) Supportix. All rights reserved.
 Written in 2025 by Dorna Raj Gyawali <dronarajgyawali@gmail.com>
 """
 
-from core.constants import Role, Status
-from core.dumps import CONTEXT_403
+from datetime import timezone
+
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.forms import model_to_dict
+
+from core.constants import Role, Status
+from core.dumps import CONTEXT_403
 
 
 class User(AbstractUser):
@@ -164,3 +167,53 @@ class Ticket(models.Model):
 
     def __str__(self):
         return self.ticket_id or f"TID-{self.pk}"
+
+
+class StatusChange(models.Model):
+    ticket = models.ForeignKey(
+        Ticket, on_delete=models.CASCADE, related_name="status_changes"
+    )
+    new_status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.WAITING
+    )
+    updated_at = models.DateTimeField(auto_now_add=True)
+    new_queued_at = models.DateTimeField(null=True, blank=True)
+    new_agent = models.ForeignKey(
+        Agent,
+        on_delete=models.SET_NULL,
+        related_name="status_changes",
+        null=True,
+        blank=True,
+    )
+
+
+class AutoEscalate(models.Model):
+    ticket = models.ForeignKey(
+        Ticket, on_delete=models.CASCADE, related_name="auto_escalate"
+    )
+    status_change = models.ForeignKey(
+        StatusChange, on_delete=models.CASCADE, related_name="auto_escalate"
+    )
+
+    @classmethod
+    def escalate_changes(cls, ticket_id, new_status, new_agent=None):
+        try:
+            ticket = Ticket.objects.get(ticket_id=ticket_id)
+            status_change = StatusChange.objects.create(
+                new_status=new_status,
+                new_agent=new_agent,
+                new_queued_at=timezone.now(),
+            )
+            cls.objects.create(ticket=ticket, status_changes=status_change)
+            ticket.status = new_status
+            if new_agent:
+                ticket.agent = new_agent
+            ticket.save()
+            return {"success": True, "message": f"Ticket {ticket_id} escalated."}
+        except Ticket.DoesNotExist:
+            return {
+                "success": False,
+                "message": f"Ticket series {ticket_id} not found.",
+            }
+        except Exception as e:
+            return {"success": False, "message": f"Error during escalation: {str(e)}"}
