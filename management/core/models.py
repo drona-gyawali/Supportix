@@ -18,15 +18,13 @@ Copyright (c) Supportix. All rights reserved.
 Written in 2025 by Dorna Raj Gyawali <dronarajgyawali@gmail.com>
 """
 
-from datetime import timezone
-
+from core.constants import Role, Status
+from core.dumps import CONTEXT_403
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.forms import model_to_dict
-
-from core.constants import Role, Status
-from core.dumps import CONTEXT_403
+from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -200,11 +198,12 @@ class AutoEscalate(models.Model):
         try:
             ticket = Ticket.objects.get(ticket_id=ticket_id)
             status_change = StatusChange.objects.create(
+                ticket=ticket,
                 new_status=new_status,
                 new_agent=new_agent,
                 new_queued_at=timezone.now(),
             )
-            cls.objects.create(ticket=ticket, status_changes=status_change)
+            cls.objects.create(ticket=ticket, status_change=status_change)
             ticket.status = new_status
             if new_agent:
                 ticket.agent = new_agent

@@ -1,7 +1,6 @@
+from core.models import Agent, Customer, Department, Role, Ticket
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-
-from core.models import Agent, Customer, Department, Role, Ticket
 
 User = get_user_model()
 

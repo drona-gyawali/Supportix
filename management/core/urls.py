@@ -1,6 +1,5 @@
-from django.urls import path
-
 from core.api import viewset
+from django.urls import path
 
 urlpatterns = [
     path("customer/<int:pk>/detail/", viewset.customer_detail, name="customer_detail"),

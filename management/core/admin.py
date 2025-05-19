@@ -19,10 +19,9 @@ Copyright (c) Supportix. All rights reserved.
 Written in 2025 by Dorna Raj Gyawali <dronarajgyawali@gmail.com>
 """
 
+from core.models import Agent, Customer, Department, Ticket, User
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-
-from core.models import Agent, Customer, Department, Ticket, User
 
 
 @admin.register(User)

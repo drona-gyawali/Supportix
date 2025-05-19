@@ -1,13 +1,12 @@
 from datetime import timedelta
 
 from celery import shared_task
-from django.db import transaction
-from django.db.models import Q
-from django.utils import timezone
-
 from core.automation.state_machine import TicketStateMachine
 from core.constants import Status
 from core.models import Agent, Ticket
+from django.db import transaction
+from django.db.models import Q
+from django.utils import timezone
 
 
 @shared_task(bind=True)
