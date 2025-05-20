@@ -44,4 +44,5 @@ vine==5.1.0
 wcwidth==0.2.13
 zope.interface==7.2
 pillow==11.2.1
-djangorestframework_simplejwt==5.5.0 
+djangorestframework_simplejwt==5.5.0
+openai===1.79.0

@@ -1,7 +1,7 @@
 """
 This file contains API viewsets for handling user authentication,
 user registration, and retrieving details for customers, agents,
-and ticket assignments in the support system.
+and ticket related  business logic in the support system.
 
 Copyright (c) Supportix. All rights reserved.
 Written in 2025 by Dorna Raj Gyawali <dronarajgyawali@gmail.com>
@@ -326,3 +326,44 @@ class TicketAssignview(APIView):
 
 
 ticket_assign = TicketAssignview.as_view()
+
+
+class TicketReopen(APIView):
+    """
+    API endpoint to reopen a ticket.
+    """
+
+    permission_classes = [IsAuthenticated | CanEditOwnOrAdmin]
+
+    def get(self, request, id, format=None):
+        try:
+            ticket = Ticket.objects.get(ticket_id=id)
+
+            if ticket.status == Status.CLOSED:
+                ticket.status = Status.WAITING
+                ticket.queued_at = None  # not sure of this line.
+                ticket.save()
+
+                return Response(
+                    {"success": f"Status changed to {ticket.status}"},
+                    status=status.HTTP_200_OK,
+                )
+
+            return Response(
+                {"Error": "Ticket is not in CLOSED status."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        except Ticket.DoesNotExist:
+            return Response(
+                {"Error": "Ticket does not exist."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as e:
+            return Response(
+                {"Error": f"An error occurred: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+ticket_reopen = TicketReopen.as_view()

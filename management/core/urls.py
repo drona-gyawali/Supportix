@@ -6,4 +6,5 @@ urlpatterns = [
     path("agent/<int:pk>/detail/", viewset.agent_detail, name="agent_detail"),
     path("ticket/create/", viewset.ticket_create, name="ticket_create"),
     path("ticket/<str:id>/assign", viewset.ticket_assign, name="ticket_assign"),
+    path("ticket/<str:id>/reopen", viewset.ticket_reopen, name="ticket_reopen"),
 ]

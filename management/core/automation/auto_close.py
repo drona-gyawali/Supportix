@@ -31,7 +31,7 @@ class AutoClose(BaseRule):
 
         return (
             ticket.status == Status.WAITING
-            and ticket.created_at < timezone.now() - timedelta(days=self.inactive_days)
+            and ticket.updated_at < timezone.now() - timedelta(days=self.inactive_days)
         )
 
     def apply(self):

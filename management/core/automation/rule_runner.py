@@ -16,12 +16,13 @@ Written in 2025 by Dorna Raj Gyawali <dronarajgyawali@gmail.com>
 """
 
 from core.automation.auto_close import AutoClose
+from core.automation.tag_by_content import TagByContent
 
 
 class RuleEngine:
     def __init__(self, ticket_id):
         self.ticket_id = ticket_id
-        self.rules = [AutoClose(ticket_id, inactive_days=1)]
+        self.rules = [AutoClose(ticket_id, inactive_days=1), TagByContent(ticket_id)]
 
     def run(self):
         context = []

@@ -48,7 +48,7 @@ class AutoCloseRuleTestCase(TestCase):
             status=Status.WAITING,
         )
         Ticket.objects.filter(pk=self.ticket.pk).update(
-            created_at=timezone.now() - timedelta(days=2)
+            updated_at=timezone.now() - timedelta(days=2)
         )
         self.ticket.refresh_from_db()
 

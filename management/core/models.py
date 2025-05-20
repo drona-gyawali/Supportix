@@ -150,6 +150,7 @@ class Ticket(models.Model):
         max_length=20, choices=Status.choices, default=Status.WAITING
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True, blank=True)
     queued_at = models.DateTimeField(null=True, blank=True)
 
     @classmethod
@@ -201,7 +202,7 @@ class AutoEscalate(models.Model):
                 ticket=ticket,
                 new_status=new_status,
                 new_agent=new_agent,
-                new_queued_at=timezone.now(),
+                new_queued_at=timezone.now(),  # this line need refactor: should be none or other option: need investigation
             )
             cls.objects.create(ticket=ticket, status_change=status_change)
             ticket.status = new_status

@@ -77,6 +77,10 @@ class ApiViewsTest(TestCase):
             "ticket_assign", kwargs={"id": self.ticket.ticket_id}
         )
 
+        self.ticket_reopen_url = reverse(
+            "ticket_reopen", kwargs={"id": self.ticket.ticket_id}
+        )
+
         self.signup_payload = {
             "user": {
                 "username": "newuser",
@@ -297,3 +301,20 @@ class ApiViewsTest(TestCase):
         invalid_url = reverse("ticket_assign", kwargs={"id": "INVALID001"})
         response = self.client.get(invalid_url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_ticket_reopen(self):
+        """Test ticket reopen with valid ticket ID."""
+        self.ticket.status = Status.CLOSED
+        self.ticket.save()
+
+        response = self.client.get(self.ticket_reopen_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("success", response.data)
+        self.assertEqual(
+            response.data["success"], f"Status changed to {Status.WAITING}"
+        )
+
+        self.ticket.refresh_from_db()
+        self.assertEqual(self.ticket.status, Status.WAITING)
+        self.assertIsNone(self.ticket.queued_at)
