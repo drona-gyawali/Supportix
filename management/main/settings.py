@@ -192,4 +192,8 @@ CELERY_BEAT_SCHEDULE = {
         "task": "core.tasks.delete_completed_tickets",
         "schedule": crontab(hour=3, minute=0),
     },
+    "automation_rule_on_every_tickets": {
+        "task": "core.tasks.apply_rules_to_all_tickets",
+        "schedule": crontab(hour=1, minute=0),
+    },
 }

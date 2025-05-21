@@ -1,12 +1,15 @@
+import logging
 from datetime import timedelta
 
 from celery import shared_task
-from core.automation.state_machine import TicketStateMachine
+from core.automation.rule_runner import RuleEngine
 from core.constants import Status
 from core.models import Agent, Ticket
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
+
+logger = logging.getLogger(__name__)
 
 
 @shared_task(bind=True)
@@ -37,7 +40,7 @@ def process_ticket_queue(self):
             agent.max_customers -= 1
             agent.save()
 
-            print(f"Ticket {ticket.ticket_id} assigned to {agent.user.username}")
+            logger.info(f"Ticket {ticket.ticket_id} assigned to {agent.user.username}")
 
 
 @shared_task(bind=True)
@@ -51,12 +54,27 @@ def delete_completed_tickets(self):
         deleted_count, _ = Ticket.objects.filter(
             status=Status.COMPLETED | Q(Status.CLOSED), updated_at__lte=cutoff
         ).delete()
-    print(f"Deleted {deleted_count} completed tickets older than 60 days.")
+    logger.info(f"Deleted {deleted_count} completed tickets older than 60 days.")
 
 
+# Todo: implement the batch processing[!important][Memmory Issue]
 @shared_task(bind=True)
-def process_state_changed(ticket_id, new_status):
-    with transaction.atomic:
-        ticket_id = Ticket.objects.select_for_update.get(ticket_id=ticket_id)
-        state_machine = TicketStateMachine(ticket_id)
-        return state_machine.transition_to(new_status)
+def apply_rules_to_all_tickets():
+    """
+    Celery task to apply RuleEngine to all tickets in the database.
+    """
+    tickets = Ticket.objects.all()
+    results = []
+
+    for ticket in tickets:
+        try:
+            engine = RuleEngine(ticket.ticket_id)
+            result = engine.run()
+            results.append({"ticket_id": ticket.ticket_id, "result": result})
+            logger.info(f"Rules applied to ticket {ticket.ticket_id}: {result}")
+        except Exception as e:
+            logger.exception(
+                f"Failed to apply rules to ticket {ticket.ticket_id}: {str(e)}"
+            )
+
+    return results

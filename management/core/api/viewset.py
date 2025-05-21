@@ -237,7 +237,7 @@ class TicketAssignview(APIView):
     API endpoint to assign a ticket to an available agent.
 
     Request Method: GET
-    URL: /app/ticket/<id>/assign/
+    URL: /app/ticket/`str:id`/assign/
 
     Path Parameter:
     - id: Ticket ID to be assigned.
@@ -330,7 +330,20 @@ ticket_assign = TicketAssignview.as_view()
 
 class TicketReopen(APIView):
     """
-    API endpoint to reopen a ticket.
+    API endpoint to reopen the ticket.
+
+    Request Method: GET
+    URL: /app/ticket/`str:id`/reopen/
+
+    Path Parameter:
+    - id: Ticket ID to be reopened.
+
+    Responses:
+    - 200 OK:
+        - Ticket successfully reopend.
+    - 400 Bad Request: Invalid ticket ID or Status is not closed.
+    - 404 Not Found: Ticket with the given ID does not exist.
+    - 500 Internal Server Error: Server side error.
     """
 
     permission_classes = [IsAuthenticated | CanEditOwnOrAdmin]
