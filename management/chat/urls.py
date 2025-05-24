@@ -1,12 +1,15 @@
+from chat.api import viewset
 from django.urls import path
 
-from .views import create, delete, group_create, group_update, update, view
-
 urlpatterns = [
-    path("view", view),
-    path("create", create),
-    path("delete/<int:id>", delete),
-    path("update/<int:id>", update),
-    path("update/group/<str:group_name>", group_update),
-    path("create/group", group_create),
+    path("messages/", viewset.chat_view, name="chat-message-list"),
+    path("messages/create/", viewset.chat_create, name="chat-message-create"),
+    path("messages/<int:id>/delete/", viewset.msg_delete, name="chat-message-delete"),
+    path("messages/<int:id>/update/", viewset.msg_update, name="chat-message-update"),
+    path("groups/create/", viewset.group_create, name="chat-group-create"),
+    path(
+        "groups/<str:group_name>/update/",
+        viewset.group_update,
+        name="chat-group-update",
+    ),
 ]

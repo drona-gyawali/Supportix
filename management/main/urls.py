@@ -24,11 +24,11 @@ from rest_framework_simplejwt.views import (TokenObtainPairView,
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/chat/", include("chat.urls")),
+    path("chat/", include("chat.urls")),
+    path("app/", include("core.urls")),
     path("signup/", viewset.signupView, name="signup"),
     path("api/login/", TokenObtainPairView.as_view(), name="token-obtain-pair"),
     path("api/logout/", viewset.logout, name="logout"),
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token-refresh-pair"),
-    path("app/", include("core.urls")),
     path("", index),
 ]

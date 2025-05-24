@@ -1,6 +1,5 @@
+from chat.models import ChatGroup, GroupMessage
 from rest_framework import serializers
-
-from .models import ChatGroup, GroupMessage
 
 
 class GroupSerializers(serializers.ModelSerializer):
@@ -9,7 +8,17 @@ class GroupSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = GroupMessage
-        fields = ["id", "body", "created", "group", "author", "parent", "replies"]
+        fields = [
+            "id",
+            "body",
+            "created",
+            "group",
+            "author",
+            "parent",
+            "replies",
+            "tag",
+            "updated_at",
+        ]
 
     def get_replies(self, obj):
         replies = obj.replies.all()

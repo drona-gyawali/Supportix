@@ -1,8 +1,8 @@
+from chat.models import ChatGroup, GroupMessage
+from chat.serializers import ChatSerializers, GroupSerializers
+from core.permissions import CanEditOwnOrAdmin
 from rest_framework import authentication, generics, permissions, status
 from rest_framework.response import Response
-
-from .models import ChatGroup, GroupMessage
-from .serializers import ChatSerializers, GroupSerializers
 
 
 class ChatMessageView(generics.ListAPIView):
@@ -24,7 +24,7 @@ class ChatMessageView(generics.ListAPIView):
         )
 
 
-view = ChatMessageView.as_view()
+chat_view = ChatMessageView.as_view()
 
 
 class ChatCreateView(generics.CreateAPIView):
@@ -33,11 +33,11 @@ class ChatCreateView(generics.CreateAPIView):
     authentication_classes = [authentication.SessionAuthentication]
 
 
-create = ChatCreateView.as_view()
+chat_create = ChatCreateView.as_view()
 
 
 class ChatDeleteView(generics.DestroyAPIView):
-    # permission_classes = [permissions.IsAdminUser]
+    permission_classes = [permissions.IsAdminUser | CanEditOwnOrAdmin]
     serializer_class = GroupSerializers
     queryset = GroupMessage.objects.all()
     lookup_field = "id"
@@ -49,24 +49,22 @@ class ChatDeleteView(generics.DestroyAPIView):
         return Response({"message": "Message has been deleted."})
 
 
-delete = ChatDeleteView.as_view()
+msg_delete = ChatDeleteView.as_view()
 
 
 class ChatUpdateView(generics.UpdateAPIView):
     serializer_class = GroupSerializers
-    authentication_classes = [authentication.SessionAuthentication]
+    authentication_classes = [authentication.SessionAuthentication | CanEditOwnOrAdmin]
     lookup_field = "id"
 
 
-update = ChatUpdateView.as_view()
+msg_update = ChatUpdateView.as_view()
 
 
 class GroupNameCreate(generics.CreateAPIView):
     serializer_class = ChatSerializers
     queryset = ChatGroup.objects.all()
-    permission_classes = [
-        permissions.IsAuthenticatedOrReadOnly,
-    ]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly | CanEditOwnOrAdmin]
 
 
 group_create = GroupNameCreate.as_view()
@@ -75,9 +73,7 @@ group_create = GroupNameCreate.as_view()
 class GroupNameUpdate(generics.UpdateAPIView):
     serializer_class = ChatSerializers
     queryset = ChatGroup.objects.all()
-    permission_classes = [
-        permissions.IsAuthenticatedOrReadOnly,
-    ]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly | CanEditOwnOrAdmin]
     lookup_field = "group_name"
 
 

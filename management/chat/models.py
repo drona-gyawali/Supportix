@@ -24,7 +24,9 @@ class GroupMessage(models.Model):
         related_name="replies",
     )
     body = models.CharField(max_length=300)
+    tag = models.CharField(max_length=50, blank=True)
     created = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
 
     class Meta:
         ordering = ["-created"]
