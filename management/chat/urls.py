@@ -12,4 +12,6 @@ urlpatterns = [
         viewset.group_update,
         name="chat-group-update",
     ),
+    path("upload_file/", viewset.upload_file, name="upload-file"),
+    path("upload_image/", viewset.upload_image, name="upload-image"),
 ]
