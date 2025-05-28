@@ -1,5 +1,6 @@
 from core.models import User
 from django.db import models
+from core.constants import Reaction
 
 
 class ChatGroup(models.Model):
@@ -33,26 +34,51 @@ class GroupMessage(models.Model):
         return f"{self.author.username}: {self.body}"
 
 
-class ImageAttachement(models.Model):
-    messages_chat_file = models.ForeignKey(
-        GroupMessage, on_delete=models.CASCADE, related_name="chat_attachment"
+class ImageAttachment(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="user_related_image",
+        null=True,
+        blank=True,
     )
-    chat_image = models.ImageField(upload_to="image/")
+    image = models.ImageField(upload_to="image/")
     uploaded_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.messages_chat_file.author.username} uploaded an image"
+        return f"{self.user.username} uploaded an image"
 
 
 class FileAttachment(models.Model):
-    message_file = models.ForeignKey(
-        GroupMessage, on_delete=models.CASCADE, related_name="file_attachment"
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="user_related_file",
+        blank=True,
+        null=True,
     )
-    file_image = models.FileField(upload_to="file/")
+    file = models.FileField(upload_to="file/")
     file_name = models.CharField(max_length=30, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.message_file.author.username} uploaded {self.file_name}"
+        return f"{self.user.username} uploaded {self.file_name}"
+
+
+class Reaction(models.Model):
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="reactions", blank=True, null=True
+    )
+    reaction = models.CharField(
+        max_length=50, choices=Reaction.choices, blank=True, null=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("user", "reaction")
+
+    def __str__(self):
+        return f"{self.user.username} reacted with {self.reaction}"

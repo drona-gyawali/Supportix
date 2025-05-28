@@ -181,12 +181,10 @@ class FileAttachment(APIView):
                 {"error": "Unauthorized to upload file "},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
-
         serializer = FileAttachmentSerializers(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(user=request.user)
             return Response({"success": "File uploaded"}, status=status.HTTP_200_OK)
-        print("Serializer errors:", serializer.errors)
         return Response(
             {"failed": "Unable to upload file", "detail_error": serializer.errors},
             status=status.HTTP_400_BAD_REQUEST,
@@ -217,12 +215,10 @@ class ImageAttachment(APIView):
                 {"error": "Unauthorized to upload images"},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
-
         serializer = ImageAttachmentSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(user=request.user)
             return Response({"success": "Image uploaded"}, status=status.HTTP_200_OK)
-        print("Serializer errors:", serializer.errors)
         return Response(
             {"failed": "Unable to upload image", "detail_error": serializer.errors},
             status=status.HTTP_400_BAD_REQUEST,

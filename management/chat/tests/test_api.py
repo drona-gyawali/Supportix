@@ -77,8 +77,7 @@ class ChatAPITest(APITestCase):
         response = self.client.post(
             self.file_url,
             {
-                "file_image": file,
-                "message_file": self.message.id,
+                "file": file,
             },
             format="multipart",
         )
@@ -89,7 +88,11 @@ class ChatAPITest(APITestCase):
             "document.txt", b"file_content", content_type="text/plain"
         )
         response = self.client.post(
-            self.file_url, {"file_image": file}, format="multipart"
+            self.file_url,
+            {
+                "file": file,
+            },
+            format="multipart",
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("detail_error", response.data)
@@ -99,7 +102,11 @@ class ChatAPITest(APITestCase):
             "large.pdf", b"x" * (20 * 1024 * 1024 + 1), content_type="application/pdf"
         )
         response = self.client.post(
-            self.file_url, {"file_image": big_file}, format="multipart"
+            self.file_url,
+            {
+                "file": big_file,
+            },
+            format="multipart",
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -108,8 +115,7 @@ class ChatAPITest(APITestCase):
         response = self.client.post(
             self.image_url,
             {
-                "chat_image": img,
-                "messages_chat_file": self.message.id,
+                "image": img,
             },
             format="multipart",
         )
@@ -118,7 +124,11 @@ class ChatAPITest(APITestCase):
     def test_invalid_image_extension(self):
         img = SimpleUploadedFile("image.txt", b"img_content", content_type="text/plain")
         response = self.client.post(
-            self.image_url, {"chat_image": img}, format="multipart"
+            self.image_url,
+            {
+                "image": img,
+            },
+            format="multipart",
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -127,6 +137,10 @@ class ChatAPITest(APITestCase):
             "image.png", b"x" * (5 * 1024 * 1024 + 1), content_type="image/png"
         )
         response = self.client.post(
-            self.image_url, {"chat_image": big_img}, format="multipart"
+            self.image_url,
+            {
+                "image": big_img,
+            },
+            format="multipart",
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

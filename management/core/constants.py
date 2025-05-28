@@ -36,3 +36,22 @@ class Status(models.TextChoices):
     PROGRESS = "progress", "Progress"
     COMPLETED = "completed", "Completed"
     CLOSED = "closed", "Closed"
+
+
+class Reaction(models.TextChoices):
+    """Possible reactions for content or messages.
+
+    * LIKE: 👍 Like - Expresses general approval or agreement.
+    * LOVE: ❤️ Love - Expresses strong affection or appreciation.
+    * LAUGH: 😂 Laugh - Indicates something is funny or amusing.
+    * SAD: 😢 Sad - Expresses sympathy or sadness.
+    * ANGRY: 😡 Angry - Shows disapproval or frustration..
+    * ROCKET: 🚀 Rocket - Shows succuess or high qualty deliverables
+    """
+
+    LIKE = "like", "👍"
+    LOVE = "love", "❤️"
+    LAUGH = "laugh", "😂"
+    SAD = "sad", "😢"
+    ANGRY = "angry", "😡"
+    ROCKET = "rocket", "🚀"

@@ -1,9 +1,9 @@
-from chat.models import ChatGroup, FileAttachment, GroupMessage, ImageAttachement
+from chat.models import ChatGroup, FileAttachment, GroupMessage, ImageAttachment
 from core.dumps import (
-    FileAttachemenSize,
-    FileAttachementExt,
-    ImageAttachemenSize,
-    ImageAttachementExt,
+    FileAttachmentSize,
+    ImageAttachmentSize,
+    FileAttachmentExt,
+    ImageAttachmentExt,
 )
 from rest_framework import serializers
 
@@ -39,15 +39,16 @@ class ChatSerializers(serializers.ModelSerializer):
 
 class ImageAttachmentSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ImageAttachement
+        model = ImageAttachment
         fields = "__all__"
+        read_only_fields = ("user",)
 
-    def validate_chat_image(self, value):
-        if not value.name.lower().endswith(tuple(ImageAttachementExt)):
+    def validate_image(self, value):
+        if not value.name.lower().endswith(tuple(ImageAttachmentExt)):
             raise serializers.ValidationError(
-                f"Your file has a {value.name} extension, please use one of {ImageAttachementExt}."
+                f"Your file has a {value.name} extension, please use one of {ImageAttachmentExt}."
             )
-        if value.size > ImageAttachemenSize:
+        if value.size > ImageAttachmentSize:
             raise serializers.ValidationError(
                 f"Your file size is {value.size} bytes, maximum allowed is 5MB."
             )
@@ -58,13 +59,14 @@ class FileAttachmentSerializers(serializers.ModelSerializer):
     class Meta:
         model = FileAttachment
         fields = "__all__"
+        read_only_fields = ("user",)
 
-    def validate_file_image(self, value):
-        if not value.name.lower().endswith(tuple(FileAttachementExt)):
+    def validate_file(self, value):
+        if not value.name.lower().endswith(tuple(FileAttachmentExt)):
             raise serializers.ValidationError(
                 f"Your file has a {value.name} extension, please use `.pdf` only."
             )
-        if value.size > FileAttachemenSize:
+        if value.size > FileAttachmentSize:
             raise serializers.ValidationError(
                 f"Your file size is {value.size} bytes, maximum allowed is 20MB."
             )

@@ -45,6 +45,9 @@ def process_ticket_queue(self):
             logger.info(f"Ticket {ticket.ticket_id} assigned to {agent.user.username}")
 
 
+# need updation
+
+
 @shared_task(bind=True)
 def agent_load_balancing():
     """

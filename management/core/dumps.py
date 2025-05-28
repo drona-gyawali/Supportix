@@ -10,7 +10,7 @@ SUCESS_SIGNUP = {"User created Successfully"}
 CONTEXT_400 = {"Invalid credentials"}
 CONTEXT_405 = {"Request method not allowed."}
 CONTEXT_403 = "Unauthorized access."
-ImageAttachementExt = [
+ImageAttachmentExt = [
     ".jpeg",
     ".jpg",
     ".png",
@@ -23,6 +23,6 @@ ImageAttachementExt = [
     ".heic",
     ".ico",
 ]
-FileAttachementExt = [".pdf"]
-FileAttachemenSize = 20 * 1024 * 1024
-ImageAttachemenSize = 5 * 1024 * 1024
+FileAttachmentExt = [".pdf"]
+FileAttachmentSize = 20 * 1024 * 1024
+ImageAttachmentSize = 5 * 1024 * 1024
