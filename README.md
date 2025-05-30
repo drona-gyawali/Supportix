@@ -176,7 +176,3 @@ Written in 2025 by Dorna Raj Gyawali <dronarajgyawali@gmail.com>
 
 **Note**:  
 This README is based on an automated analysis of the repository. For the latest details or updates, refer to the [GitHub repository](https://github.com/drona-gyawali/Supportix).
-
----
-
-If you’d like more specific usage examples or API documentation included, let me know!
