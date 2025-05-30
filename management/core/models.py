@@ -217,3 +217,21 @@ class AutoEscalate(models.Model):
             }
         except Exception as e:
             return {"success": False, "message": f"Error during escalation: {str(e)}"}
+
+
+class PaymentDetails(models.Model):
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="payment_history"
+    )
+    payment_verified = models.BooleanField(default=False)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    stripe_payment_intent_id = models.CharField(
+        max_length=255,
+        unique=True,
+        null=True,
+        blank=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user} : {self.amount} ({'✓' if self.payment_verified else '✗'})"

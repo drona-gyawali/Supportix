@@ -3,16 +3,15 @@ Info:
  Copyright (c) SupportSystem
  Written in 2025 by Dorna Raj Gyawali <dronarajgyawali@gmail.com>
 
-This module provides utility functions for validating ticket creation,
-checking agent assignment status, and retrieving user information.
-
 Functions:
 - validate_ticket_creation(customer_id): Validates that a customer has no open tickets before creating a new one.
 - check_agent_status(customer_id): Checks if a customer has at least one ticket assigned to an agent.
 - get_user(request, role=None): Retrieves the username of an authenticated user with an optional role check.
+- get_supported_currencies(): Returns a sorted list of all currencies Stripe can accept.
 
 """
 
+import stripe
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
@@ -53,3 +52,15 @@ def get_user(request, role=None):
     if user.role != role:
         return None
     return user.username
+
+
+# TODO: Cache it in memory to avoid hit in every request
+def get_supported_currencies():
+    """
+    Returns a sorted list of all currencies Stripe can accept (e.g. ['AUD','CAD','EUR','USD',...]).
+    """
+    specs = stripe.CountrySpec.list().auto_paging_iter()
+    currencies = set()
+    for spec in specs:
+        currencies.update([c.upper() for c in spec.supported_payment_currencies])
+    return sorted(currencies)

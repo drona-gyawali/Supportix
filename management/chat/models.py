@@ -1,6 +1,6 @@
+from core.constants import Reaction
 from core.models import User
 from django.db import models
-from core.constants import Reaction
 
 
 class ChatGroup(models.Model):

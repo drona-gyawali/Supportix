@@ -1,10 +1,7 @@
-from chat.models import ChatGroup, FileAttachment, GroupMessage, ImageAttachment
-from core.dumps import (
-    FileAttachmentSize,
-    ImageAttachmentSize,
-    FileAttachmentExt,
-    ImageAttachmentExt,
-)
+from chat.models import (ChatGroup, FileAttachment, GroupMessage,
+                         ImageAttachment)
+from core.dumps import (FileAttachmentExt, FileAttachmentSize,
+                        ImageAttachmentExt, ImageAttachmentSize)
 from rest_framework import serializers
 
 

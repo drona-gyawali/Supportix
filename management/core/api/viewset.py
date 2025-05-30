@@ -30,6 +30,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 logger = logging.getLogger(__name__)
 
 
+# TODO: OauthApply auth : google, github, microsoft
+
+
 class signupView(APIView):
     """
      API endpoint for user signup.

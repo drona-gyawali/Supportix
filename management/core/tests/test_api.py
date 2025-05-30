@@ -7,18 +7,24 @@ Written in 2025 by Dorna Raj Gyawali <dronarajgyawali@gmail.com>
 
 import json
 from datetime import datetime, timedelta
+# import uuid
+from decimal import Decimal
 from unittest import mock
+from unittest.mock import MagicMock, patch
 
+import stripe
 from core.constants import Status
-from core.models import Agent, Customer, Department, Ticket, User
+from core.models import (Agent, Customer, Department, PaymentDetails, Ticket,
+                         User)
 from django.db.models import F
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils.timezone import make_aware
 from rest_framework import status
 from rest_framework.test import APIClient
 
 
+@override_settings(STRIPE_SECRET_KEY="sk_test_123", STRIPE_WEBHOOK_SECRET="whsec_test")
 class ApiViewsTest(TestCase):
     """Test cases for all API endpoints in a single class."""
 
@@ -318,3 +324,114 @@ class ApiViewsTest(TestCase):
         self.ticket.refresh_from_db()
         self.assertEqual(self.ticket.status, Status.WAITING)
         self.assertIsNone(self.ticket.queued_at)
+
+    # Stripe Payment logic are tested on customers only -> because we are trying
+    # to use some diff payment gateway for agents and admin.
+    @patch("core.api.payments.validators.get_supported_currencies")
+    @patch("stripe.PaymentIntent.create")
+    def test_create_payment_intent_success(
+        self, mock_pi_create, mock_get_supported_currencies
+    ):
+        mock_get_supported_currencies.return_value = ["USD", "EUR"]
+        mock_intent = MagicMock()
+        mock_intent.client_secret = "cs_test_123"
+        mock_intent.id = "pi_test_456"
+        mock_pi_create.return_value = mock_intent
+
+        self.client.force_authenticate(user=self.customer_user)
+
+        url = reverse("stripe_payment")
+        data = {"amount": 19.99, "currency": "usd", "description": "test transaction"}
+        response = self.client.post(url, data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("client_secret", response.data)
+        self.assertIn("payment_intent_id", response.data)
+        self.assertEqual(response.data["client_secret"], "cs_test_123")
+        self.assertEqual(response.data["payment_intent_id"], "pi_test_456")
+        mock_pi_create.assert_called_once()
+        args, kwargs = mock_pi_create.call_args
+        self.assertEqual(kwargs["amount"], int(19.99 * 100))
+        self.assertEqual(kwargs["currency"], "USD")
+        self.assertEqual(kwargs["metadata"]["user_id"], self.customer_user.id)
+
+    @patch("core.validators.get_supported_currencies")
+    def test_create_payment_intent_invalid_currency(self, mock_currencies):
+        mock_currencies.return_value = ["EUR"]
+        url = reverse("stripe_payment")
+        data = {"amount": 10, "currency": "USD"}
+        response = self.client.post(url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("error", response.data)
+
+    @patch("core.validators.get_supported_currencies")
+    def test_create_payment_intent_invalid_amount(self, mock_currencies):
+        mock_currencies.return_value = ["USD"]
+        url = reverse("stripe_payment")
+        data = {"amount": None, "currency": "USD"}
+        response = self.client.post(url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("error", response.data)
+
+    @patch("stripe.Webhook.construct_event")
+    def test_webhook_payment_succeeded_creates_record(self, mock_construct):
+        intent_id = "pi_webhook_123"
+        amount_cents = 2500
+        fake_intent = {
+            "id": intent_id,
+            "amount": amount_cents,
+            "metadata": {"user_id": str(self.customer_user.id)},
+        }
+        fake_event = {
+            "type": "payment_intent.succeeded",
+            "data": {"object": fake_intent},
+        }
+        mock_construct.return_value = fake_event
+
+        url = reverse("stripe_event")
+        payload = json.dumps({"dummy": "data"})
+        headers = {"HTTP_STRIPE_SIGNATURE": "testsig"}
+        response = self.client.post(
+            url, payload, content_type="application/json", **headers
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        payment = PaymentDetails.objects.get(stripe_payment_intent_id=intent_id)
+        self.assertTrue(payment.payment_verified)
+        self.assertEqual(payment.amount, Decimal(amount_cents / 100))
+        self.assertEqual(payment.user, self.customer_user)
+
+    @patch(
+        "stripe.Webhook.construct_event",
+        side_effect=stripe.error.SignatureVerificationError("sig error", "invalidsig"),
+    )
+    def test_webhook_invalid_signature(self, mock_construct):
+        url = reverse("stripe_event")
+        payload = json.dumps({"dummy": "data"})
+        headers = {"HTTP_STRIPE_SIGNATURE": "invalidsig"}
+        response = self.client.post(
+            url, payload, content_type="application/json", **headers
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch("stripe.Webhook.construct_event")
+    def test_webhook_payment_failed_logs(self, mock_construct):
+        fake_intent = {"id": "pi_fail_789"}
+        fake_event = {
+            "type": "payment_intent.payment_failed",
+            "data": {"object": fake_intent},
+        }
+        mock_construct.return_value = fake_event
+
+        url = reverse("stripe_event")
+        payload = json.dumps({})
+        headers = {"HTTP_STRIPE_SIGNATURE": "testsig"}
+        response = self.client.post(
+            url, payload, content_type="application/json", **headers
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(
+            PaymentDetails.objects.filter(
+                stripe_payment_intent_id="pi_fail_789"
+            ).exists()
+        )

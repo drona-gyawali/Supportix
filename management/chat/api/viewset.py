@@ -1,10 +1,6 @@
 from chat.models import ChatGroup, GroupMessage
-from chat.serializers import (
-    ChatSerializers,
-    FileAttachmentSerializers,
-    GroupSerializers,
-    ImageAttachmentSerializer,
-)
+from chat.serializers import (ChatSerializers, FileAttachmentSerializers,
+                              GroupSerializers, ImageAttachmentSerializer)
 from rest_framework import authentication, generics, permissions, status
 from rest_framework.decorators import APIView
 from rest_framework.response import Response
