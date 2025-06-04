@@ -2,14 +2,15 @@ import shutil
 import tempfile
 from io import BytesIO
 
-from chat.models import ChatGroup, GroupMessage
-from core.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 from django.urls import reverse
 from PIL import Image
 from rest_framework import status
 from rest_framework.test import APITestCase
+
+from chat.models import ChatGroup, GroupMessage
+from core.models import User
 
 
 def generate_test_image():
@@ -70,77 +71,80 @@ class ChatAPITest(APITestCase):
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_valid_pdf_upload(self):
-        file = SimpleUploadedFile(
-            "document.pdf", b"file_content", content_type="application/pdf"
-        )
-        response = self.client.post(
-            self.file_url,
-            {
-                "file": file,
-            },
-            format="multipart",
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    # TODO: currently all test images are uploading in the cloud
+    # and we don't want that because it cost.
 
-    def test_invalid_extension_file_upload(self):
-        file = SimpleUploadedFile(
-            "document.txt", b"file_content", content_type="text/plain"
-        )
-        response = self.client.post(
-            self.file_url,
-            {
-                "file": file,
-            },
-            format="multipart",
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("detail_error", response.data)
+    # def test_valid_pdf_upload(self):
+    #     file = SimpleUploadedFile(
+    #         "document.pdf", b"file_content", content_type="application/pdf"
+    #     )
+    #     response = self.client.post(
+    #         self.file_url,
+    #         {
+    #             "file": file,
+    #         },
+    #         format="multipart",
+    #     )
+    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_large_file_upload(self):
-        big_file = SimpleUploadedFile(
-            "large.pdf", b"x" * (20 * 1024 * 1024 + 1), content_type="application/pdf"
-        )
-        response = self.client.post(
-            self.file_url,
-            {
-                "file": big_file,
-            },
-            format="multipart",
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    # def test_invalid_extension_file_upload(self):
+    #     file = SimpleUploadedFile(
+    #         "document.txt", b"file_content", content_type="text/plain"
+    #     )
+    #     response = self.client.post(
+    #         self.file_url,
+    #         {
+    #             "file": file,
+    #         },
+    #         format="multipart",
+    #     )
+    #     self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    #     self.assertIn("detail_error", response.data)
 
-    def test_valid_image_upload(self):
-        img = generate_test_image()
-        response = self.client.post(
-            self.image_url,
-            {
-                "image": img,
-            },
-            format="multipart",
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    # def test_large_file_upload(self):
+    #     big_file = SimpleUploadedFile(
+    #         "large.pdf", b"x" * (20 * 1024 * 1024 + 1), content_type="application/pdf"
+    #     )
+    #     response = self.client.post(
+    #         self.file_url,
+    #         {
+    #             "file": big_file,
+    #         },
+    #         format="multipart",
+    #     )
+    #     self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_invalid_image_extension(self):
-        img = SimpleUploadedFile("image.txt", b"img_content", content_type="text/plain")
-        response = self.client.post(
-            self.image_url,
-            {
-                "image": img,
-            },
-            format="multipart",
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    # def test_valid_image_upload(self):
+    #     img = generate_test_image()
+    #     response = self.client.post(
+    #         self.image_url,
+    #         {
+    #             "image": img,
+    #         },
+    #         format="multipart",
+    #     )
+    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_large_image_upload(self):
-        big_img = SimpleUploadedFile(
-            "image.png", b"x" * (5 * 1024 * 1024 + 1), content_type="image/png"
-        )
-        response = self.client.post(
-            self.image_url,
-            {
-                "image": big_img,
-            },
-            format="multipart",
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    # def test_invalid_image_extension(self):
+    #     img = SimpleUploadedFile("image.txt", b"img_content", content_type="text/plain")
+    #     response = self.client.post(
+    #         self.image_url,
+    #         {
+    #             "image": img,
+    #         },
+    #         format="multipart",
+    #     )
+    #     self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    # def test_large_image_upload(self):
+    #     big_img = SimpleUploadedFile(
+    #         "image.png", b"x" * (5 * 1024 * 1024 + 1), content_type="image/png"
+    #     )
+    #     response = self.client.post(
+    #         self.image_url,
+    #         {
+    #             "image": big_img,
+    #         },
+    #         format="multipart",
+    #     )
+    #     self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

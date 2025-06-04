@@ -12,10 +12,11 @@ Written in 2025 by Dorna Raj Gyawali <dronarajgyawali@gmail.com>
 
 from datetime import timedelta
 
+from django.utils import timezone
+
 from core.automation.base_rule import BaseRule
 from core.constants import Status
 from core.models import AutoEscalate, Ticket
-from django.utils import timezone
 
 
 class AutoClose(BaseRule):

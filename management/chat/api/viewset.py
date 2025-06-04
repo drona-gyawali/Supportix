@@ -1,9 +1,10 @@
-from chat.models import ChatGroup, GroupMessage
-from chat.serializers import (ChatSerializers, FileAttachmentSerializers,
-                              GroupSerializers, ImageAttachmentSerializer)
 from rest_framework import authentication, generics, permissions, status
 from rest_framework.decorators import APIView
 from rest_framework.response import Response
+
+from chat.models import ChatGroup, GroupMessage
+from chat.serializers import (ChatSerializers, FileAttachmentSerializers,
+                              GroupSerializers, ImageAttachmentSerializer)
 
 
 class ChatMessageView(generics.ListAPIView):
@@ -180,7 +181,7 @@ class FileAttachment(APIView):
         serializer = FileAttachmentSerializers(data=request.data)
         if serializer.is_valid():
             serializer.save(user=request.user)
-            return Response({"success": "File uploaded"}, status=status.HTTP_200_OK)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(
             {"failed": "Unable to upload file", "detail_error": serializer.errors},
             status=status.HTTP_400_BAD_REQUEST,
@@ -214,7 +215,7 @@ class ImageAttachment(APIView):
         serializer = ImageAttachmentSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(user=request.user)
-            return Response({"success": "Image uploaded"}, status=status.HTTP_200_OK)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(
             {"failed": "Unable to upload image", "detail_error": serializer.errors},
             status=status.HTTP_400_BAD_REQUEST,

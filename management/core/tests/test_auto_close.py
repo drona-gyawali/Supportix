@@ -1,10 +1,11 @@
 from datetime import timedelta
 
+from django.test import TestCase
+from django.utils import timezone
+
 from core.automation.auto_close import AutoClose
 from core.automation.rule_runner import RuleEngine
 from core.models import Agent, Customer, Department, Status, Ticket, User
-from django.test import TestCase
-from django.utils import timezone
 
 
 class AutoCloseRuleTestCase(TestCase):

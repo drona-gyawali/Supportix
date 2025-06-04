@@ -1,6 +1,8 @@
+from cloudinary.models import CloudinaryField
+from django.db import models
+
 from core.constants import Reaction
 from core.models import User
-from django.db import models
 
 
 class ChatGroup(models.Model):
@@ -42,7 +44,7 @@ class ImageAttachment(models.Model):
         null=True,
         blank=True,
     )
-    image = models.ImageField(upload_to="image/")
+    image = CloudinaryField("image")
     uploaded_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -58,7 +60,7 @@ class FileAttachment(models.Model):
         blank=True,
         null=True,
     )
-    file = models.FileField(upload_to="file/")
+    file = CloudinaryField("file")
     file_name = models.CharField(max_length=30, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

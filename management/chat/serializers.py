@@ -1,8 +1,9 @@
+from rest_framework import serializers
+
 from chat.models import (ChatGroup, FileAttachment, GroupMessage,
                          ImageAttachment)
 from core.dumps import (FileAttachmentExt, FileAttachmentSize,
                         ImageAttachmentExt, ImageAttachmentSize)
-from rest_framework import serializers
 
 
 class GroupSerializers(serializers.ModelSerializer):
@@ -35,10 +36,12 @@ class ChatSerializers(serializers.ModelSerializer):
 
 
 class ImageAttachmentSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
     class Meta:
         model = ImageAttachment
-        fields = "__all__"
-        read_only_fields = ("user",)
+        fields = ["id", "image", "image_url", "updated_at"]
+        read_only_fields = ["uploaded_at", "user"]
 
     def validate_image(self, value):
         if not value.name.lower().endswith(tuple(ImageAttachmentExt)):
@@ -51,12 +54,19 @@ class ImageAttachmentSerializer(serializers.ModelSerializer):
             )
         return value
 
+    def get_image_url(self, obj):
+        if obj.image:
+            return obj.image.url
+        return None
+
 
 class FileAttachmentSerializers(serializers.ModelSerializer):
+    file_url = serializers.SerializerMethodField()
+
     class Meta:
         model = FileAttachment
-        fields = "__all__"
-        read_only_fields = ("user",)
+        fields = ["id", "file", "file_name", "file_url", "updated_at"]
+        read_only_fields = ["uploaded_at", "user"]
 
     def validate_file(self, value):
         if not value.name.lower().endswith(tuple(FileAttachmentExt)):
@@ -68,3 +78,8 @@ class FileAttachmentSerializers(serializers.ModelSerializer):
                 f"Your file size is {value.size} bytes, maximum allowed is 20MB."
             )
         return value
+
+    def get_file_url(self, obj):
+        if obj.file:
+            return obj.file.url
+        return None

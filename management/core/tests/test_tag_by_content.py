@@ -1,9 +1,10 @@
 from unittest.mock import patch
 
+from django.test import TestCase
+
 from core.automation.tag_by_content import TagByContent
 from core.constants import Status
 from core.models import Agent, Customer, Department, Ticket, User
-from django.test import TestCase
 
 
 class TagByContentTest(TestCase):

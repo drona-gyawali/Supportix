@@ -1,9 +1,10 @@
 import logging
 
+from django.db import transaction
+
 from core.automation.base_rule import BaseRule
 from core.models import Ticket
 from core.utils.llm import generate_tags
-from django.db import transaction
 
 logger = logging.getLogger(__name__)
 

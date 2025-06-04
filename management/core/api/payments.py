@@ -1,14 +1,15 @@
 import logging
 import uuid
 
-import core.validators as validators
 import stripe
-from core.models import PaymentDetails, User
 from django.http import HttpResponse
-from main.settings import STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
 from rest_framework import status
 from rest_framework.decorators import APIView
 from rest_framework.response import Response
+
+import core.validators as validators
+from core.models import PaymentDetails, User
+from main.settings import STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
 
 logger = logging.getLogger(__name__)
 

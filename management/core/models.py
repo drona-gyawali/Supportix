@@ -18,13 +18,14 @@ Copyright (c) Supportix. All rights reserved.
 Written in 2025 by Dorna Raj Gyawali <dronarajgyawali@gmail.com>
 """
 
-from core.constants import Role, Status
-from core.dumps import CONTEXT_403
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.forms import model_to_dict
 from django.utils import timezone
+
+from core.constants import Role, Status
+from core.dumps import CONTEXT_403
 
 
 class User(AbstractUser):

@@ -2,12 +2,13 @@ import logging
 from datetime import timedelta
 
 from celery import shared_task
-from core.automation.rule_runner import RuleEngine
-from core.constants import Status
-from core.models import Agent, Ticket
 from django.db import transaction
 from django.db.models import F, Q
 from django.utils import timezone
+
+from core.automation.rule_runner import RuleEngine
+from core.constants import Status
+from core.models import Agent, Ticket
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +96,7 @@ def delete_completed_tickets(self):
     logger.info(f"Deleted {deleted_count} completed tickets older than 60 days.")
 
 
-# Todo: implement the batch processing[!important][Memmory Issue]
+# TODO: implement the batch processing[!important][Memmory Issue]
 @shared_task(bind=True)
 def apply_rules_to_all_tickets():
     """

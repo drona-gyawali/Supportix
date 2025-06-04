@@ -13,15 +13,16 @@ from unittest import mock
 from unittest.mock import MagicMock, patch
 
 import stripe
-from core.constants import Status
-from core.models import (Agent, Customer, Department, PaymentDetails, Ticket,
-                         User)
 from django.db.models import F
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils.timezone import make_aware
 from rest_framework import status
 from rest_framework.test import APIClient
+
+from core.constants import Status
+from core.models import (Agent, Customer, Department, PaymentDetails, Ticket,
+                         User)
 
 
 @override_settings(STRIPE_SECRET_KEY="sk_test_123", STRIPE_WEBHOOK_SECRET="whsec_test")

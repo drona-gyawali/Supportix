@@ -1,5 +1,6 @@
-from chat.api import viewset
 from django.urls import path
+
+from chat.api import viewset
 
 urlpatterns = [
     path("messages/", viewset.chat_view, name="chat-message-list"),
