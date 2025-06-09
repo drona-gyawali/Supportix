@@ -7,6 +7,7 @@ Written in 2025 by Dorna Raj Gyawali <dronarajgyawali@gmail.com>
 
 import json
 from datetime import datetime, timedelta
+
 # import uuid
 from decimal import Decimal
 from unittest import mock
@@ -21,8 +22,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from core.constants import Status
-from core.models import (Agent, Customer, Department, PaymentDetails, Ticket,
-                         User)
+from core.models import Agent, Customer, Department, PaymentDetails, Ticket, User
 
 
 @override_settings(STRIPE_SECRET_KEY="sk_test_123", STRIPE_WEBHOOK_SECRET="whsec_test")

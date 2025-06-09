@@ -26,3 +26,5 @@ ImageAttachmentExt = [
 FileAttachmentExt = [".pdf"]
 FileAttachmentSize = 20 * 1024 * 1024
 ImageAttachmentSize = 5 * 1024 * 1024
+OVERLOAD_THRESHOLD = 50
+UNDERUTILIZED_THRESHOLD = 10

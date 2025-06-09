@@ -14,7 +14,7 @@ Functions:
 import stripe
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-
+from django.core.cache import cache
 from .models import Ticket
 
 User = get_user_model()
@@ -54,13 +54,20 @@ def get_user(request, role=None):
     return user.username
 
 
-# TODO: Cache it in memory to avoid hit in every request
+# For now we are caching the result for one hour:
+# If we grow we can make some changes but for now
+# Its make sense.
 def get_supported_currencies():
     """
     Returns a sorted list of all currencies Stripe can accept (e.g. ['AUD','CAD','EUR','USD',...]).
     """
-    specs = stripe.CountrySpec.list().auto_paging_iter()
-    currencies = set()
-    for spec in specs:
-        currencies.update([c.upper() for c in spec.supported_payment_currencies])
+    cache_key = "stripe_supported_currencies"
+    currencies = cache.get(cache_key)
+    if currencies is None:
+        specs = stripe.CountrySpec.list().auto_paging_iter()
+        currency_set = set()
+        for spec in specs:
+            currencies.update([c.upper() for c in spec.supported_payment_currencies])
+        currencies = sorted(currency_set)
+        cache.set(cache_key, currencies, timeout=6000)
     return sorted(currencies)

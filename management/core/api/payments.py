@@ -176,5 +176,3 @@ class StripeWebhookView(APIView):
 
 
 stripe_payment_event = StripeWebhookView.as_view()
-
-# TODO: Esewa and Khalti needs to be also added.

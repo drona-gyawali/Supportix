@@ -49,3 +49,4 @@ openai==1.79.0
 stripe==12.2.0
 cloudinary==1.44.0
 django-cloudinary-storage==0.3.0
+django-redis==5.4.0

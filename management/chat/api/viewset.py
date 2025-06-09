@@ -3,8 +3,12 @@ from rest_framework.decorators import APIView
 from rest_framework.response import Response
 
 from chat.models import ChatGroup, GroupMessage
-from chat.serializers import (ChatSerializers, FileAttachmentSerializers,
-                              GroupSerializers, ImageAttachmentSerializer)
+from chat.serializers import (
+    ChatSerializers,
+    FileAttachmentSerializers,
+    GroupSerializers,
+    ImageAttachmentSerializer,
+)
 
 
 class ChatMessageView(generics.ListAPIView):
