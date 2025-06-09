@@ -1,0 +1,30 @@
+"""
+This is a .env example file of this project, User can setup their own and make app function by filling the credentials, keys etc.
+make sure you are using .env file.
+"""
+
+
+# Environment variables for the application Database
+DB_NAME=DATABASE_NAME
+DB_USER=DATABASE_USERNAME
+DB_PASSWORD=DATABASE_PASSWORD
+DB_HOST=localhost
+DB_PORT=5432
+
+# Stripe Integration Keys
+STRIPE_SECRET_KEY= xxxxxxx
+STRIPE_WEBHOOK_SECRET = xxxx
+
+
+#Esewa Integration keys
+ESEWA_BASE = "https://api.esewa.com.np"
+ESEWA_CLIENT_SECRET = "<base64_client_secret>"
+ESEWA_USERNAME = "<your_username>"
+ESEWA_PASSWORD = "<base64_password>"
+
+
+# Coludninary Integration Keys
+CLOUDINARY_CLOUD_NAME = xxxxx
+CLOUDINARY_API_KEY = xxxxxxxx
+CLOUDINARY_API_SECRET = xxxxxxxxxxx
+
