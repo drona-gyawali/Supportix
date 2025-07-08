@@ -55,3 +55,40 @@ class Reaction(models.TextChoices):
     SAD = "sad", "😢"
     ANGRY = "angry", "😡"
     ROCKET = "rocket", "🚀"
+
+
+class AlertType(models.TextChoices):
+    """Possible alert types for notifications or system messages.
+
+    * ASSIGNED: Task or ticket has been assigned.
+    * WAITING: Task or ticket is waiting to be processed.
+    * CLOSED: Task or ticket has been closed.
+    * OPEN: Task or ticket has been opened.
+    * COMPLETED: Task or ticket has been completed.
+    * IN_PROGRESS: Task or ticket is currently in progress.
+    """
+
+    ASSIGNED = "assigned", "Assigned"
+    WAITING = "waiting", "Waiting"
+    CLOSED = "closed", "Closed"
+    OPEN = "open", "Open"
+    COMPLETED = "completed", "Completed"
+    IN_PROGRESS = "in_progress", "In Progress"
+
+
+class ChannelType(models.TextChoices):
+    """Possible channel types for communication.
+
+    * EMAIL: Communication via email.
+    * SLACK: Communication via Slack.
+    * DISCORD: Communication via Discord.
+    * SMS: Communication via SMS.
+    * WHATSAPP: Communication via WhatsApp.
+    * SMS: Communication via sms
+    """
+
+    EMAIL = "email", "Email"
+    SLACK = "slack", "Slack"
+    DISCORD = "discord", "Discord"
+    SMS = "sms", "SMS"
+    WHATSAPP = "whatsapp", "WhatsApp"
