@@ -1,5 +1,5 @@
 # Supportix: AI‑Integrated Scalable Customer Support System
-
+>⚠
 > **Note**: This project is currently in development. Core infrastructure and several backend features are implemented, but some modules and integrations may be incomplete or under active development.
 
 Supportix is a high-performance, AI-enabled support ticket platform combining a Django/DRF backend with a modern React frontend. It automates ticket distribution, forecasts load, and dynamically merges teams to optimize resource use.
